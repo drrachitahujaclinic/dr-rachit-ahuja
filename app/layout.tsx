@@ -10,9 +10,9 @@ import Footer from "@/components/Footer";
 const dmSans = DM_Sans({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Excellence Oncology - Cancer Care & Treatment",
+  title: "Dr. Rachit Ahuja - Cancer Care & Treatment",
   description:
-    "Leading oncology center providing comprehensive cancer care, cutting-edge treatments, and compassionate support.",
+    "Leading oncology doctor providing comprehensive cancer care, cutting-edge treatments, and compassionate support.",
   generator: "v0.app",
 }
 
