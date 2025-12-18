@@ -3,8 +3,40 @@
 import { Button } from "../ui/button";
 import Link from "next/link";
 import { Phone, CalendarDays } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
+import { useAuthStore } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 const Hero = () => {
+  const {loginWithGoogle, setRedirect, user} = useAuthStore();
+  const router = useRouter();
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      await loginWithGoogle(tokenResponse.access_token);
+
+      // After login, continue to the stored redirect page if exists
+      const path = useAuthStore.getState().redirectTo;
+      if (path) {
+        setRedirect(null);
+        router.push(path);
+      }
+    },
+    onError: () => {
+      console.error("Google login failed");
+    },
+  });
+
+  // Book consultation logic
+  const handleBook = () => {
+    if (!user) {
+      setRedirect("/book-appointment");     // store where user wanted to go
+      handleGoogleLogin();      // trigger login popup
+      return;
+    }
+
+    router.push("/book-appointment");
+  };
   return (
     <section className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-100 flex sm:items-center items-start">
 
@@ -53,10 +85,9 @@ const Hero = () => {
               size="lg"
               className="bg-primary rounded-full hover:bg-primary/90 text-white shadow-md px-10 py-6 text-lg flex items-center gap-2"
               asChild
+              onClick={handleBook}
             >
-              <Link href="/book">
                 <CalendarDays className="w-5 h-5" /> Book Consultation
-              </Link>
             </Button>
 
             <Button
