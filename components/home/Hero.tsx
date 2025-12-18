@@ -87,7 +87,7 @@ const Hero = () => {
               asChild
               onClick={handleBook}
             >
-                <CalendarDays className="w-5 h-5" /> Book Consultation
+                Book Consultation
             </Button>
 
             <Button
