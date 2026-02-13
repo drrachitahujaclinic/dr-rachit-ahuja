@@ -44,8 +44,12 @@ export default function BookAppointment() {
   const setRedirect = useAuthStore((s) => s.setRedirect);
 
   // state
+  const [paymentMethod, setPaymentMethod] = useState<
+    "ONLINE" | "PAY_ON_ARRIVAL"
+  >("ONLINE");
+
   const [selectedClinic, setSelectedClinic] = useState<string>(
-    clinicParam || "dehradun"
+    clinicParam || "dehradun",
   );
   const [allowedClinics, setAllowedClinics] = useState<string[]>([
     "DEHRADUN",
@@ -188,7 +192,7 @@ export default function BookAppointment() {
         setSlotsLoading(true);
         // 1) check settings
         const settingsRes = (await api.get(
-          `/clinic/check-settings?date=${selectedDate}`
+          `/clinic/check-settings?date=${selectedDate}`,
         )) as any;
         // expected: { allowedClinics: [...], isBlocked, message }
         const allowed: string[] = settingsRes.allowedClinics || [];
@@ -221,14 +225,14 @@ export default function BookAppointment() {
           "DEHRADUN"
         ).toUpperCase();
         const slotsRes = (await api.get(
-          `/slots?date=${selectedDate}&clinic=${clinicParamToSend}`
+          `/slots?date=${selectedDate}&clinic=${clinicParamToSend}`,
         )) as any;
         if (slotsRes && slotsRes.slots) {
           setSlots(slotsRes.slots || []);
           // If today → filter out past time slots
           if (isToday(selectedDate)) {
             const nowFiltered = slotsRes.slots.filter(
-              (s: any) => !isPastTimeToday(s.startTime)
+              (s: any) => !isPastTimeToday(s.startTime),
             );
 
             setSlots(nowFiltered);
@@ -237,7 +241,7 @@ export default function BookAppointment() {
             if (selectedTime && isPastTimeToday(selectedTime)) {
               setSelectedTime("");
               toast.error(
-                "Selected time is in the past. Choose a future time."
+                "Selected time is in the past. Choose a future time.",
               );
             }
 
@@ -254,12 +258,12 @@ export default function BookAppointment() {
           if (
             selectedTime &&
             slotsRes.slots.every(
-              (s: any) => s.startTime !== selectedTime || !s.available
+              (s: any) => s.startTime !== selectedTime || !s.available,
             )
           ) {
             setSelectedTime("");
             toast(
-              "Previously selected slot no longer available. Choose another."
+              "Previously selected slot no longer available. Choose another.",
             );
           }
         } else {
@@ -286,7 +290,7 @@ export default function BookAppointment() {
       try {
         const clinicParamToSend = selectedClinic.toUpperCase();
         const slotsRes = (await api.get(
-          `/slots?date=${selectedDate}&clinic=${clinicParamToSend}`
+          `/slots?date=${selectedDate}&clinic=${clinicParamToSend}`,
         )) as any;
         if (slotsRes && slotsRes.slots) setSlots(slotsRes.slots || []);
       } catch (err: any) {
@@ -301,6 +305,7 @@ export default function BookAppointment() {
   const handleBooking = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setShowErrors(true);
+
     const ok = await ensureSignedIn();
     if (!ok) return;
 
@@ -312,6 +317,7 @@ export default function BookAppointment() {
       return toast.error(blockedInfo.message || "Selected date is blocked");
 
     setLoading(true);
+
     try {
       // get-or-create patient
       const patientResp = (await api.post("/patients", {
@@ -320,14 +326,53 @@ export default function BookAppointment() {
         gender,
         age,
       })) as any;
+
       const patient = patientResp.patient;
       const patientId = patient._id || patient.id;
 
-      // create order
+      // -----------------------------
+      // NEW FLOW: PAY ON ARRIVAL
+      // -----------------------------
+      if (paymentMethod === "PAY_ON_ARRIVAL") {
+        const appointmentPayload = {
+          email,
+          patientId,
+          city: selectedClinic.toUpperCase(),
+          date: selectedDate,
+          startTime: selectedTime,
+          endTime: getEndTime(selectedTime),
+
+          payment: {
+            amount: fee ? fee * 100 : undefined, // keep consistent with backend (paise)
+            currency,
+            method: "PAY_ON_ARRIVAL",
+            status: "PENDING",
+          },
+        };
+
+        const created = (await api.post(
+          "/appointments",
+          appointmentPayload,
+        )) as any;
+
+        toast.success("Appointment confirmed! Pay at clinic.");
+        router.push(`/appointment-confirmed/${created.appointment._id}`);
+        return;
+      }
+
+      // -----------------------------
+      // EXISTING FLOW: ONLINE PAYMENT
+      // -----------------------------
       setOrderCreating(true);
       const orderResp = await api.post("/payments/create-order");
       setOrderCreating(false);
-      const { order_id, key_id, amount, currency }: any = orderResp;
+
+      const {
+        order_id,
+        key_id,
+        amount,
+        currency: orderCurrency,
+      }: any = orderResp;
 
       if (!order_id || !key_id)
         throw new Error("Failed to create payment order");
@@ -338,7 +383,7 @@ export default function BookAppointment() {
       const checkoutOptions: any = {
         key: key_id,
         amount,
-        currency,
+        currency: orderCurrency,
         name: clinicData[selectedClinic.toUpperCase()]?.name || "Clinic",
         description: "Consultation Fee",
         order_id,
@@ -364,18 +409,11 @@ export default function BookAppointment() {
               city: selectedClinic.toUpperCase(),
               date: selectedDate,
               startTime: selectedTime,
-              endTime: (() => {
-                const [hh, mm] = selectedTime.split(":").map(Number);
-                const d = new Date();
-                d.setHours(hh);
-                d.setMinutes(mm + 30);
-                return `${String(d.getHours()).padStart(2, "0")}:${String(
-                  d.getMinutes()
-                ).padStart(2, "0")}`;
-              })(),
+              endTime: getEndTime(selectedTime),
               payment: {
                 amount,
-                currency,
+                currency: orderCurrency,
+                method: "ONLINE",
                 razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
@@ -383,7 +421,11 @@ export default function BookAppointment() {
               },
             };
 
-            const created = await api.post("/appointments", appointmentPayload) as any;
+            const created = (await api.post(
+              "/appointments",
+              appointmentPayload,
+            )) as any;
+
             toast.success("Appointment confirmed!");
             router.push(`/appointment-confirmed/${created.appointment._id}`);
           } catch (err: any) {
@@ -415,10 +457,20 @@ export default function BookAppointment() {
     }
   };
 
+  const getEndTime = (start: string) => {
+    const [hh, mm] = start.split(":").map(Number);
+    const d = new Date();
+    d.setHours(hh);
+    d.setMinutes(mm + 30);
+    return `${String(d.getHours()).padStart(2, "0")}:${String(
+      d.getMinutes(),
+    ).padStart(2, "0")}`;
+  };
+
   // UI helpers
   const availableClinicKeys = allowedClinics.map((k) => k.toLowerCase());
   const clinicsToRender = ["dehradun", "roorkee", "online"].filter((k) =>
-    availableClinicKeys.includes(k)
+    availableClinicKeys.includes(k),
   );
 
   return (
@@ -535,8 +587,8 @@ export default function BookAppointment() {
                                   selectedTime === s.startTime
                                     ? "border-primary bg-blue-100"
                                     : s.available
-                                    ? "border-gray-300 bg-white hover:border-primary"
-                                    : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+                                      ? "border-gray-300 bg-white hover:border-primary"
+                                      : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
                                 }
                               `}
                             >
@@ -723,21 +775,61 @@ export default function BookAppointment() {
                 </div>
 
                 {/* SUBMIT (large button on desktop, bottom sticky on mobile) */}
-                <div className="hidden lg:block">
-                  <Button
-                    type="submit"
-                    className="w-full py-6 text-lg font-semibold bg-primary hover:bg-primary/90 text-white rounded-md shadow"
-                    disabled={
-                      !selectedDate ||
-                      !selectedTime ||
-                      blockedInfo.blocked ||
-                      loading ||
-                      orderCreating
-                    }
-                  >
-                    {loading || orderCreating
-                      ? "Processing…"
-                      : "Proceed to Payment"}
+                <div className="border-t pt-6" />
+
+                {/* ---------------- PAYMENT METHOD ---------------- */}
+                <div className="space-y-4">
+                  {/* <h2 className="text-xl sm:text-2xl font-bold">
+                    Payment Method
+                  </h2> */}
+
+                  <div className="grid grid-cols-1 gap-3">
+                    {/* <label
+                      className={`p-4 rounded-lg border cursor-pointer transition ${
+                        paymentMethod === "ONLINE"
+                          ? "border-primary bg-blue-50"
+                          : "border-gray-300 bg-white hover:border-primary"
+                      }`}
+                      onClick={() => setPaymentMethod("ONLINE")}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-sm">Pay Online</p>
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          checked={paymentMethod === "ONLINE"}
+                          onChange={() => setPaymentMethod("ONLINE")}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Pay now using UPI / Card / Netbanking
+                      </p>
+                    </label> */}
+
+                    <label
+                      className={`w-full p-4 rounded-lg border cursor-pointer transition ${
+                        paymentMethod === "PAY_ON_ARRIVAL"
+                          ? "border-primary bg-blue-50"
+                          : "border-gray-300 bg-white hover:border-primary"
+                      }`}
+                      onClick={() => setPaymentMethod("PAY_ON_ARRIVAL")}
+                    >
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-sm">Pay on Arrival</p>
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          checked={paymentMethod === "PAY_ON_ARRIVAL"}
+                          onChange={() => setPaymentMethod("PAY_ON_ARRIVAL")}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Pay at the clinic before consultation
+                      </p>
+                    </label>
+                  </div>
+                  <Button className="w-full bg-primary text-white hover:bg-primary/90 rounded-lg text-lg py-6 font-semibold">
+                    Book Now
                   </Button>
                 </div>
 
@@ -807,8 +899,6 @@ export default function BookAppointment() {
                     )}
                   </div>
                 </div>
-
-                
               </Card>
 
               <Card className="p-4 shadow-sm rounded-2xl">
@@ -856,7 +946,7 @@ export default function BookAppointment() {
                 handleBooking && handleBooking(e);
               }}
             >
-              {loading || orderCreating ? "Processing…" : "Proceed to Payment"}
+              {loading || orderCreating ? "Processing…" : "Book"}
             </Button>
           </div>
         </div>
