@@ -506,11 +506,6 @@ function AppointmentDocuments({
   const isPDF = (mime?: string, url?: string) =>
     !!(mime && mime.includes("pdf")) || !!(url && /\.pdf$/i.test(url || ""));
 
-  // Open file picker
-  const pickFiles = () => {
-    inputRef.current?.click();
-  };
-
   // Remove a document
   const removeDocument = async (docId: string) => {
     const ok = confirm("Delete this document? This action cannot be undone.");
@@ -539,110 +534,6 @@ function AppointmentDocuments({
     }
   };
 
-  // Handle file selection & upload flow
-  const onFiles = async (filesList: FileList | null) => {
-    if (!filesList || filesList.length === 0) return;
-    const files = Array.from(filesList);
-
-    // limit file size and count policy (example)
-    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-
-    for (const file of files) {
-      if (file.size > MAX_FILE_SIZE) {
-        toast.error(`${file.name} exceeds 10 MB limit`);
-        continue;
-      }
-
-      // 1) create document record & get presigned upload url
-      let presignResp: any;
-      setBusy(true);
-      try {
-        presignResp = (await api.post("/uploads/presign", {
-          filename: file.name,
-          contentType: file.type || "application/octet-stream",
-          size: file.size,
-          appointmentId,
-        })) as any;
-      } catch (err: any) {
-        console.error("presign error", err);
-        toast.error(err?.message || "Failed to generate upload URL");
-        setBusy(false);
-        continue;
-      }
-
-      const { documentId, uploadUrl } = presignResp;
-      if (!documentId || !uploadUrl) {
-        toast.error("Invalid presign response");
-        setBusy(false);
-        continue;
-      }
-
-      // Add a placeholder doc to UI (so user sees it)
-      const placeholder: DocItem = {
-        _id: documentId,
-        filename: file.name,
-        mimeType: file.type,
-      };
-      setDocuments((d) => [placeholder, ...d]);
-
-      // 2) upload to S3 via presigned URL
-      try {
-        setUploading((u) => ({ ...u, [documentId]: 0 }));
-        await fetch(uploadUrl, {
-          method: "PUT",
-          headers: {
-            "Content-Type": file.type || "application/octet-stream",
-          },
-          body: file,
-        });
-        // Note: fetch does not expose upload progress. To get progress we need XMLHttpRequest.
-        // For progress: use XMLHttpRequest below instead of fetch.
-      } catch (err) {
-        console.error("simple fetch upload failed", err);
-      }
-
-      // Replace above naive fetch with XHR to show progress
-      try {
-        await new Promise<void>((resolve, reject) => {
-          const xhr = new XMLHttpRequest();
-          xhr.open("PUT", uploadUrl, true);
-          xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
-          xhr.upload.onprogress = (ev) => {
-            if (ev.lengthComputable) {
-              const pct = Math.round((ev.loaded / ev.total) * 100);
-              setUploading((u) => ({ ...u, [documentId]: pct }));
-            }
-          };
-          xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-              setUploading((u) => ({ ...u, [documentId]: 100 }));
-              resolve();
-            } else {
-              reject(new Error(`Upload failed with status ${xhr.status}`));
-            }
-          };
-          xhr.onerror = () => reject(new Error("Network error during upload"));
-          xhr.send(file);
-        });
-
-        // 3) after successful upload ask backend for signed url to display
-        await fetchSignedUrlAndUpdate(documentId);
-        toast.success(`${file.name} uploaded`);
-      } catch (err: any) {
-        console.error("upload error", err);
-        toast.error(err?.message || "Upload failed");
-        // remove placeholder doc
-        setDocuments((d) => d.filter((x) => x._id !== documentId));
-      } finally {
-        setUploading((u) => {
-          const copy = { ...u };
-          delete copy[documentId];
-          return copy;
-        });
-        setBusy(false);
-      }
-    } // each file loop
-  };
 
   return (
     <section aria-labelledby="docs-heading" className="mt-6">
@@ -665,7 +556,7 @@ function AppointmentDocuments({
                   key={doc._id}
                   className="min-w-[220px] max-w-[260px] bg-white border rounded-lg p-3 shadow-sm flex flex-col"
                 >
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start overflow-x-scroll justify-between gap-2">
                     <div className="flex-1">
                       <p className="text-sm font-medium text-gray-800 truncate">{doc.filename}</p>
                       <p className="text-xs text-gray-500 mt-1">{doc.mimeType?.split('/')[1].toUpperCase() || "—"}</p>

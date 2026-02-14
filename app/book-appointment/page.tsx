@@ -46,7 +46,7 @@ export default function BookAppointment() {
   // state
   const [paymentMethod, setPaymentMethod] = useState<
     "ONLINE" | "PAY_ON_ARRIVAL"
-  >("ONLINE");
+  >("PAY_ON_ARRIVAL");
 
   const [selectedClinic, setSelectedClinic] = useState<string>(
     clinicParam || "dehradun",
@@ -311,8 +311,14 @@ export default function BookAppointment() {
 
     if (!selectedDate) return toast.error("Select date");
     if (!selectedTime) return toast.error("Select time");
-    if (!name || !email || !phone || !age || !gender)
+    if (!name || !email || !phone || !age || !gender) {
       return toast.error("Fill patient details");
+    }
+
+    if (phone.length !== 10) {
+      return toast.error("Enter a valid 10-digit phone number");
+    }
+
     if (blockedInfo.blocked)
       return toast.error(blockedInfo.message || "Selected date is blocked");
 
@@ -472,6 +478,7 @@ export default function BookAppointment() {
   const clinicsToRender = ["dehradun", "roorkee", "online"].filter((k) =>
     availableClinicKeys.includes(k),
   );
+  const isPhoneValid = phone?.length === 10;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-white to-blue-50">
@@ -704,13 +711,17 @@ export default function BookAppointment() {
                       <input
                         value={phone}
                         onChange={(e) => {
-                          const v = e.target.value.replace(/\D/g, "");
-                          if (v.length <= 10) setPhone && setPhone(v);
+                          const digitsOnly = e.target.value.replace(/\D/g, "");
+                          setPhone(digitsOnly.slice(0, 10));
                         }}
                         placeholder="10-digit phone number"
+                        inputMode="numeric"
+                        pattern="\d{10}"
+                        maxLength={10}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg"
                         required
                       />
+
                       {showErrors && (!phone || phone.length < 10) && (
                         <p className="mt-2 text-sm text-red-600">
                           Enter patient's valid 10-digit phone number
