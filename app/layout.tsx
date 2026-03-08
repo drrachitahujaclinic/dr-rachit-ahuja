@@ -3,9 +3,10 @@ import type { Metadata } from "next"
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { DM_Sans } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
-import "./globals.css"
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Script from "next/script";
+import "./globals.css"
 
 const dmSans = DM_Sans({ subsets: ["latin"] })
 
@@ -23,14 +24,23 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${dmSans.className} font-sans antialiased`}>
-        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-          <Navbar />
-          {children}
-          <Footer />
-        </GoogleOAuthProvider>
-        <Analytics />
-      </body>
-    </html>
+  <body className={`${dmSans.className} font-sans antialiased`}>
+
+    <Script src="https://cdn.jsdelivr.net/npm/eruda" strategy="afterInteractive" />
+
+    <Script id="eruda-init" strategy="afterInteractive">
+      {`eruda.init();`}
+    </Script>
+
+    <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
+      <Navbar />
+      {children}
+      <Footer />
+    </GoogleOAuthProvider>
+
+    <Analytics />
+
+  </body>
+</html>
   )
 }
