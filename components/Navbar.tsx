@@ -14,6 +14,7 @@ const Navbar: React.FC = () => {
 
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle);
   const setRedirect = useAuthStore((s) => s.setRedirect);
+  const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
 
   // Google OAuth Login
@@ -57,12 +58,10 @@ const Navbar: React.FC = () => {
                 <Stethoscope className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
-
-              <span className="font-bold text-lg text-foreground">
-                Dr. Rachit Ahuja
-              </span>
+                <span className="font-bold text-lg text-foreground">
+                  Dr. Rachit Ahuja
+                </span>
                 <p className="text-xs">MD MRCP ECMO | Reg. No.: UKMC 3865</p>
-              
               </div>
             </div>
           </Link>
@@ -95,9 +94,21 @@ const Navbar: React.FC = () => {
               </Button>
             ) : (
               <div className="flex items-center gap-3">
+                <span className="text-sm">Hi, {userFirstName}</span>
+
                 <Link href="/appointments">
                   <Button variant="outline">My Appointments</Button>
                 </Link>
+
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    logout();
+                    router.push("/");
+                  }}
+                >
+                  Logout
+                </Button>
               </div>
             )}
 
@@ -163,11 +174,24 @@ const Navbar: React.FC = () => {
             ) : (
               <>
                 <span className="text-sm px-2">Hi, {userFirstName}</span>
+
                 <Link href="/appointments" onClick={() => setOpen(false)}>
                   <Button variant="outline" className="w-full">
                     My Appointments
                   </Button>
                 </Link>
+
+                <Button
+                  variant="ghost"
+                  className="w-full"
+                  onClick={() => {
+                    logout();
+                    setOpen(false);
+                    router.push("/");
+                  }}
+                >
+                  Logout
+                </Button>
               </>
             )}
 
