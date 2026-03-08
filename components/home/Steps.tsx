@@ -9,6 +9,10 @@ import {
   Clock,
 } from "lucide-react";
 
+import { useGoogleLogin } from "@react-oauth/google";
+import { useAuthStore } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+
 /**
  * StepsNew.tsx
  * - Fresh build from scratch
@@ -60,6 +64,8 @@ function StepBadge({ n, color }: { n: number; color: string }) {
     rose: "bg-rose-50 text-rose-700 border-rose-100",
     emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
   }[color];
+
+  
   return (
     <div
       className={`flex items-center justify-center w-12 h-12 rounded-full border ${bg} font-semibold`}
@@ -71,6 +77,37 @@ function StepBadge({ n, color }: { n: number; color: string }) {
 }
 
 export default function StepsNew() {
+  const {loginWithGoogle, setRedirect, user} = useAuthStore();
+  const router = useRouter();
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      await loginWithGoogle(tokenResponse.access_token);
+
+      // After login, continue to the stored redirect page if exists
+      const path = useAuthStore.getState().redirectTo;
+      if (path) {
+        setRedirect(null);
+        router.push(path);
+      }
+    },
+    onError: () => {
+      console.error("Google login failed");
+    },
+  });
+  
+  // Book consultation logic
+  const handleBook = async () => {
+    if (!user) {
+      setRedirect("/book-appointment");     // store where user wanted to go
+      handleGoogleLogin();      // trigger login popup
+      return;
+    }
+
+    router.push("/book-appointment");
+  };
+
+
   return (
     <section id="journey" className="bg-white py-14 md:py-20">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -142,14 +179,14 @@ export default function StepsNew() {
 
         {/* CTA */}
         <div className="mt-10 md:mt-12 text-center">
-          <Button size="lg" className="bg-primary hover:bg-primary/95 text-white font-semibold" asChild>
-            <Link href="/book-appointment">Book Your Slot Now</Link>
+          <Button onClick={handleBook} size="lg">
+            Book Your Slot Now
           </Button>
 
           <p className="mt-4 text-sm text-gray-500 max-w-xl mx-auto">
             Need help? Call us at{" "}
-            <a href="tel:+919876543210" className="text-primary font-medium">
-              +91 98765 43210
+            <a href="tel:+919816549972" className="text-primary font-medium">
+              +91 98165 49972
             </a>
             .
           </p>

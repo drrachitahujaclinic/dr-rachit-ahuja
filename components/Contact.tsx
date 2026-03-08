@@ -9,6 +9,10 @@ import {
   ExternalLink,
   Video,
 } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
+import { useAuthStore } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+import { Button } from "./ui/button";
 
 const CONTACT = {
   phone: "+91 98165 49972",
@@ -34,6 +38,38 @@ const CLINICS = [
 
 export default function ContactPage() {
   const whatsapp = `https://wa.me/${CONTACT.phone.replace(/\D/g, "")}`;
+
+  const {loginWithGoogle, setRedirect, user} = useAuthStore();
+  const router = useRouter();
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      await loginWithGoogle(tokenResponse.access_token);
+
+      // After login, continue to the stored redirect page if exists
+      const path = useAuthStore.getState().redirectTo;
+      if (path) {
+        setRedirect(null);
+        router.push(path);
+      }
+    },
+    onError: () => {
+      console.error("Google login failed");
+    },
+  });
+  
+  // Book consultation logic
+  const handleBook = async () => {
+    if (!user) {
+      setRedirect("/book-appointment");     // store where user wanted to go
+      handleGoogleLogin();      // trigger login popup
+      return;
+    }
+
+    router.push("/book-appointment");
+  };
+
+
 
   return (
     <section className="bg-white">
@@ -172,11 +208,9 @@ export default function ContactPage() {
             Choose your clinic and select an available appointment slot.
           </p>
 
-          <Link href="/book-appointment">
-            <button className="mt-6 px-8 py-4 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">
+            <Button onClick={handleBook} className="mt-6 px-8 py-4 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">
               Book Appointment
-            </button>
-          </Link>
+            </Button>
 
         </div>
 

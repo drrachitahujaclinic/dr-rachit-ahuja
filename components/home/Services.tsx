@@ -11,13 +11,10 @@ import {
   Coffee,
   CheckSquare,
 } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
+import { useAuthStore } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
-/**
- * Services - redesigned modern layout
- * - Removed per-card "Learn More"
- * - Single CTA below the grid
- * - Responsive: 1 / 2 / 3 columns
- */
 
 const services = [
   {
@@ -65,6 +62,37 @@ const services = [
 ];
 
 const Services: React.FC = () => {
+  const {loginWithGoogle, setRedirect, user} = useAuthStore();
+  const router = useRouter();
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      await loginWithGoogle(tokenResponse.access_token);
+
+      // After login, continue to the stored redirect page if exists
+      const path = useAuthStore.getState().redirectTo;
+      if (path) {
+        setRedirect(null);
+        router.push(path);
+      }
+    },
+    onError: () => {
+      console.error("Google login failed");
+    },
+  });
+  
+  // Book consultation logic
+  const handleBook = async () => {
+    if (!user) {
+      setRedirect("/book-appointment");     // store where user wanted to go
+      handleGoogleLogin();      // trigger login popup
+      return;
+    }
+
+    router.push("/book-appointment");
+  };
+
+
   return (
     <section
       id="services"
@@ -128,14 +156,13 @@ const Services: React.FC = () => {
 
         {/* CTA */}
         <div className="mt-10 sm:mt-12 flex justify-center">
-          <Link href="/book-appointment" className="w-full max-w-fit">
             <Button
               size="lg"
+              onClick={handleBook}
               className="px-8 py-4 text-white font-semibold shadow-lg"
             >
               Book Consultation
             </Button>
-          </Link>
         </div>
 
         {/* small helper text */}

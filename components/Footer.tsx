@@ -28,16 +28,7 @@ export default function Footer() {
               Medical Registration: UKMC 3865
             </p>
 
-            <div className="mt-2">
-              <Link href="/book-appointment" className="inline-block">
-                <button
-                  type="button"
-                  className="bg-white text-foreground font-medium px-4 py-2 rounded-md shadow-sm hover:opacity-95"
-                >
-                  Book Consultation
-                </button>
-              </Link>
-            </div>
+            
           </div>
 
           {/* About */}

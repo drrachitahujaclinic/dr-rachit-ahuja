@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Card } from "../ui/card";
 import { Button } from "../ui/button";
 import { Clock, MapPin, Video, Hospital, Navigation } from "lucide-react";
+import { useGoogleLogin } from "@react-oauth/google";
+import { useAuthStore } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 const clinicData = {
   DEHRADUN: {
@@ -32,6 +35,37 @@ const clinicData = {
 };
 
 const ClinicDetails: React.FC = () => {
+  const {loginWithGoogle, setRedirect, user} = useAuthStore();
+  const router = useRouter();
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      await loginWithGoogle(tokenResponse.access_token);
+
+      // After login, continue to the stored redirect page if exists
+      const path = useAuthStore.getState().redirectTo;
+      if (path) {
+        setRedirect(null);
+        router.push(path);
+      }
+    },
+    onError: () => {
+      console.error("Google login failed");
+    },
+  });
+  
+  // Book consultation logic
+  const handleBook = async () => {
+    if (!user) {
+      setRedirect("/book-appointment");     // store where user wanted to go
+      handleGoogleLogin();      // trigger login popup
+      return;
+    }
+
+    router.push("/book-appointment");
+  };
+
+  
   return (
     <section
       id="clinics"
@@ -105,11 +139,9 @@ const ClinicDetails: React.FC = () => {
 
               </div>
 
-              <Link href="/book-appointment?clinic=DEHRADUN">
-                <Button className="w-full">
+                <Button onClick={handleBook} className="w-full">
                   Book Dehradun Consultation
                 </Button>
-              </Link>
 
             </div>
           </Card>
@@ -166,11 +198,9 @@ const ClinicDetails: React.FC = () => {
 
               </div>
 
-              <Link href="/book-appointment?clinic=ROORKEE">
-                <Button className="w-full">
+              <Button onClick={handleBook} className="w-full">
                   Book Roorkee Consultation
                 </Button>
-              </Link>
 
             </div>
           </Card>
@@ -216,11 +246,9 @@ const ClinicDetails: React.FC = () => {
 
               </div>
 
-              <Link href="/book-appointment?clinic=ONLINE">
-                <Button className="w-full">
+              <Button onClick={handleBook} className="w-full">
                   Book Online Consultation
                 </Button>
-              </Link>
 
             </div>
           </Card>

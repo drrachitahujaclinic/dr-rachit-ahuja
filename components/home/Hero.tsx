@@ -2,13 +2,13 @@
 
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { Phone, CalendarDays, Calendar } from "lucide-react";
+import { Phone, CalendarDays, Calendar, Calendar1 } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useAuthStore } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 
 const Hero = () => {
-  const {loginWithGoogle, setRedirect, user} = useAuthStore();
+  const {loginWithGoogle, setRedirect, user, logout} = useAuthStore();
   const router = useRouter();
 
   const handleGoogleLogin = useGoogleLogin({
@@ -26,9 +26,9 @@ const Hero = () => {
       console.error("Google login failed");
     },
   });
-
+  
   // Book consultation logic
-  const handleBook = () => {
+  const handleBook = async () => {
     if (!user) {
       setRedirect("/book-appointment");     // store where user wanted to go
       handleGoogleLogin();      // trigger login popup
@@ -37,6 +37,7 @@ const Hero = () => {
 
     router.push("/book-appointment");
   };
+  
   return (
     <section className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-100 flex sm:items-center items-start">
 
@@ -84,10 +85,10 @@ const Hero = () => {
             <Button
               size="lg"
               className="bg-primary rounded-full hover:bg-primary/90 text-white shadow-md px-10 py-6 text-lg flex items-center gap-2"
-              asChild
+              
               onClick={handleBook}
             >
-                Book Consultation
+                <Calendar className="w-6 h-6" /> Book Consultation
             </Button>
 
             <Button
@@ -100,16 +101,7 @@ const Hero = () => {
                 <Phone className="w-5 h-5" /> Call Clinic
               </a>
             </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="rounded-full bg-primary text-white px-10 py-6 text-lg flex items-center gap-2"
-              asChild
-            >
-              <a href="/book-appointment">
-                <Calendar className="w-5 h-5" /> Book Appointment
-              </a>
-            </Button>
+            
           </div>
         </div>
 
