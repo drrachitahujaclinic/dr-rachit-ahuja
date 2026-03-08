@@ -1,183 +1,187 @@
-import React from "react";
-import Link from "next/link";
-import { Button } from "./ui/button";
-import { Card } from "./ui/card";
-import { Mail, Phone, MapPin, ExternalLink } from "lucide-react";
+"use client";
 
-/**
- * Contact.tsx — redesigned contact section (no form)
- * - Shows email, phone and clinics (per city)
- * - Mobile-first, white background, accessible links
- */
+import Link from "next/link";
+import {
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  ExternalLink,
+  Video,
+} from "lucide-react";
+
+const CONTACT = {
+  phone: "+91 98165 49972",
+  email: "rachitahuja.dr@gmail.com",
+};
 
 const CLINICS = [
   {
-    key: "dehradun",
     name: "Shri Mahant Indiresh Hospital",
     city: "Dehradun",
-    hours: "Mon–Sat · 10:00 AM – 2:00 PM",
-    mapQuery: "Shri Mahant Indiresh Hospital Dehradun",
+    address: "Patel Nagar, Dehradun, Uttarakhand",
+    hours: "Monday – Saturday · 9:00 AM – 3:00 PM",
+    map: "Shri Mahant Indiresh Hospital Dehradun",
   },
   {
-    key: "roorkee",
     name: "Hemant Hospital",
     city: "Roorkee",
-    hours: "2nd & 4th Thursday · 10:00 AM – 2:00 PM",
-    mapQuery: "Hemant Hospital Roorkee",
-  },
-  {
-    key: "online",
-    name: "Online Consultation (Google Meet)",
-    city: "Online",
-    hours: "Available during clinic hours",
-    mapQuery: "Google Meet",
+    address: "Roorkee, Uttarakhand",
+    hours: "2nd & 4th Thursday · 10:30 AM – 2:30 PM",
+    map: "Hemant Hospital Roorkee",
   },
 ];
 
-export default function Contact() {
-  const email = "info@excellenceoncology.com";
-  const phone = "+919876543210";
-  const whatsappLink = `https://wa.me/${phone.replace(/\D/g, "")}`;
+export default function ContactPage() {
+  const whatsapp = `https://wa.me/${CONTACT.phone.replace(/\D/g, "")}`;
 
   return (
-    <section id="contact" className="bg-linear-to-t from-blue-50 to-gray-50 py-14 md:py-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="text-center max-w-3xl mx-auto mb-10">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-foreground">
+    <section className="bg-white">
+
+      {/* HERO */}
+      <div className="bg-blue-50 border-b">
+        <div className="max-w-6xl mx-auto px-6 py-20 text-center">
+
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
             Contact & Clinic Locations
-          </h2>
-          <p className="mt-3 text-sm md:text-base text-gray-600">
-            Reach out to us by phone or email — or locate the clinic nearest you
-            from the list below.
+          </h1>
+
+          <p className="mt-4 text-lg text-gray-600 max-w-xl mx-auto">
+            Schedule a consultation, ask questions, or get directions to our clinics.
           </p>
-        </div>
 
-        {/* Primary contact */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <Card className="p-6 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <Mail className="w-6 h-6 text-primary" />
-                <div>
-                  <p className="text-sm text-gray-500">Email</p>
-                  <a
-                    href={`mailto:${email}`}
-                    className="text-sm font-medium text-foreground hover:underline break-all"
-                  >
-                    {email}
-                  </a>
-                </div>
-              </div>
+          {/* QUICK ACTIONS */}
+          <div className="mt-10 flex flex-wrap justify-center gap-4">
 
-              <div className="flex items-center gap-3">
-                <Phone className="w-6 h-6 text-primary" />
-                <div>
-                  <p className="text-sm text-gray-500">Phone</p>
-                  <a
-                    href={`tel:${phone}`}
-                    className="text-sm font-medium text-foreground hover:underline"
-                  >
-                    {phone}
-                  </a>
-                </div>
-              </div>
-            </div>
+            <a
+              href={`tel:${CONTACT.phone}`}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary/90"
+            >
+              <Phone className="w-4 h-4" />
+              Call Clinic
+            </a>
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <a
-                href={`mailto:${email}`}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-white text-sm font-medium hover:bg-primary/90"
-              >
-                <Mail className="w-4 h-4" />
-                Email Us
-              </a>
+            <a
+              href={whatsapp}
+              target="_blank"
+              className="flex items-center gap-2 px-6 py-3 rounded-lg border font-medium hover:bg-gray-50"
+            >
+              <ExternalLink className="w-4 h-4" />
+              WhatsApp
+            </a>
 
-              <a
-                href={`tel:${phone}`}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-200 text-sm font-medium hover:bg-gray-50"
-              >
-                <Phone className="w-4 h-4" />
-                Call
-              </a>
+            <a
+              href={`mailto:${CONTACT.email}`}
+              className="flex items-center gap-2 px-6 py-3 rounded-lg border font-medium hover:bg-gray-50"
+            >
+              <Mail className="w-4 h-4" />
+              Email
+            </a>
 
-              <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-gray-200 text-sm font-medium hover:bg-gray-50"
-              >
-                <ExternalLink className="w-4 h-4" />
-                WhatsApp
-              </a>
-            </div>
-          </Card>
+          </div>
 
-          {/* Quick info card */}
-          <Card className="p-6 flex flex-col justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Office Hours</h3>
-              <p className="text-sm text-gray-600">Monday – Saturday</p>
-              <p className="text-sm font-medium text-foreground mb-3">10:00 AM – 2:00 PM</p>
-
-              <p className="text-sm text-gray-600">Sunday</p>
-              <p className="text-sm font-medium text-red-600">Closed</p>
-            </div>
-
-            <div className="mt-6 text-sm text-gray-600">
-              <div className="flex items-center justify-between border-t border-gray-100 pt-3">
-                <span>Appointment duration</span>
-                <span className="font-medium text-foreground">30 minutes</span>
-              </div>
-            </div>
-          </Card>
-
-          {/* Map / Directions quick link */}
-          <Card className="p-6 flex flex-col justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">Get Directions</h3>
-              <p className="text-sm text-gray-600">
-                Open each clinic on Google Maps for the exact address and directions.
-              </p>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-2">
-              {CLINICS.map((c) => (
-                <a
-                  key={c.key}
-                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                    c.mapQuery
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between gap-3 px-4 py-3 rounded-lg border border-gray-100 hover:bg-gray-50"
-                >
-                  <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-primary mt-0.5" />
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium text-foreground">{c.name}</div>
-                      <div className="text-xs text-gray-500">
-                        {c.city} · <span className="font-medium text-foreground">{c.hours}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <ExternalLink className="w-4 h-4 text-gray-400" />
-                </a>
-              ))}
-            </div>
-          </Card>
-        </div>
-
-        
-        {/* Final CTA */}
-        <div className="mt-10 text-center">
-          <Link href="/book-appointment" className="inline-block">
-            <Button size="lg" className="bg-primary text-white px-6 py-3">
-              Book an Appointment
-            </Button>
-          </Link>
         </div>
       </div>
+
+      {/* CLINICS */}
+      <div className="max-w-6xl mx-auto px-6 py-20">
+
+        <h2 className="text-3xl font-semibold text-gray-900 text-center mb-12">
+          Our Clinic Locations
+        </h2>
+
+        <div className="grid md:grid-cols-3 gap-6">
+
+          {CLINICS.map((clinic) => (
+
+            <div
+              key={clinic.city}
+              className="border rounded-xl p-8 hover:shadow-lg transition"
+            >
+
+              <div className="flex items-center gap-3 mb-4">
+                <MapPin className="w-5 h-5 text-primary" />
+                <h3 className="text-xl font-semibold text-gray-900">
+                  {clinic.city}
+                </h3>
+              </div>
+
+              <p className="font-medium text-gray-800">
+                {clinic.name}
+              </p>
+
+              <p className="text-gray-600 mt-1">
+                {clinic.address}
+              </p>
+
+              <div className="flex items-center gap-2 mt-4 text-gray-700">
+                <Clock className="w-4 h-4 text-primary" />
+                {clinic.hours}
+              </div>
+
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                  clinic.map
+                )}`}
+                target="_blank"
+                className="inline-flex items-center gap-2 mt-6 text-primary font-medium hover:underline"
+              >
+                Get Directions
+                <ExternalLink className="w-4 h-4" />
+              </a>
+
+            </div>
+
+          ))}
+
+          {/* ONLINE */}
+          <div className="border rounded-xl p-8">
+
+            <div className="flex items-center gap-3 mb-4">
+              <Video className="w-5 h-5 text-primary" />
+              <h3 className="text-xl font-semibold text-gray-900">
+                Online Consultation
+              </h3>
+            </div>
+
+            <p className="text-gray-700">
+              Secure video consultation via Google Meet.
+            </p>
+
+            <div className="flex items-center gap-2 mt-4 text-gray-700">
+              <Clock className="w-4 h-4 text-primary" />
+              Evening slots · 5:00 PM – 7:00 PM
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* CTA */}
+      <div className="border-t bg-gray-50">
+
+        <div className="max-w-6xl mx-auto px-6 py-16 text-center">
+
+          <h3 className="text-2xl font-semibold text-gray-900">
+            Ready to Book a Consultation?
+          </h3>
+
+          <p className="text-gray-600 mt-2">
+            Choose your clinic and select an available appointment slot.
+          </p>
+
+          <Link href="/book-appointment">
+            <button className="mt-6 px-8 py-4 rounded-lg bg-primary text-white font-semibold hover:bg-primary/90">
+              Book Appointment
+            </button>
+          </Link>
+
+        </div>
+
+      </div>
+
     </section>
   );
 }

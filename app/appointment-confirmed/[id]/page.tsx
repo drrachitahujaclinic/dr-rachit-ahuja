@@ -25,23 +25,25 @@ import Link from "next/link";
 import toast from "react-hot-toast";
 
 /** clinicData left intact */
-const clinicData: any = {
-  DEHRADUN: {
-    name: "Shri Mahant Indiresh Hospital, Dehradun",
-    location: "Dehradun",
-    hours: "10:00 AM - 2:00 PM",
-  },
-  ROORKEE: {
-    name: "Hemant Hospital, Roorkee",
-    location: "Roorkee",
-    hours: "2nd & 4th Thursday • 10:00 AM - 2:00 PM",
-  },
-  ONLINE: {
-    name: "Online Consultation — Google Meet",
-    location: "Google Meet",
-    hours: "10:00 AM - 2:00 PM",
-  },
-};
+const clinicData: Record<string, any> = {
+    DEHRADUN: {
+      name: "Shri Mahant Indiresh Hospital, Dehradun",
+      location: "Dehradun",
+      hours: "9:00 AM – 3:00 PM",
+    },
+
+    ROORKEE: {
+      name: "Hemant Hospital, Roorkee",
+      location: "Roorkee",
+      hours: "2nd & 4th Thursday 10:30 AM – 2:30 PM",
+    },
+
+    ONLINE: {
+      name: "Online Consultation - Google Meet",
+      location: "Google Meet",
+      hours: "5:00 PM – 7:00 PM",
+    },
+  };
 
 export default function AppointmentConfirmedPage() {
   const router = useRouter();
@@ -342,7 +344,7 @@ export default function AppointmentConfirmedPage() {
                   </a>
 
                   {!isOnline && (
-                    <a className="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm" href={`tel:${appointment.patientId?.phone || ""}`}>
+                    <a className="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm" href={`tel:+919816549972`}>
                       <Phone className="w-4 h-4" /> Call
                     </a>
                   )}

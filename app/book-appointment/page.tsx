@@ -44,9 +44,6 @@ export default function BookAppointment() {
   const setRedirect = useAuthStore((s) => s.setRedirect);
 
   // state
-  const [paymentMethod, setPaymentMethod] = useState<
-    "ONLINE" | "PAY_ON_ARRIVAL"
-  >("PAY_ON_ARRIVAL");
 
   const [selectedClinic, setSelectedClinic] = useState<string>(
     clinicParam || "dehradun",
@@ -74,16 +71,15 @@ export default function BookAppointment() {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [orderCreating, setOrderCreating] = useState(false);
 
-  const [fee, setFee] = useState<number | null>(null);
+  const [pricing, setPricing] = useState<any>(null);
   const [currency, setCurrency] = useState<string>("INR");
   const [pricingLoading, setPricingLoading] = useState(true);
   useEffect(() => {
     const loadPricing = async () => {
       try {
         const res = (await api.get("admin/pricing")) as any;
-        console.log(res);
-        setFee(res?.settings.appointmentFee / 100 || null);
-        setCurrency(res?.currency || "INR");
+        setPricing(res?.settings || null);
+        setCurrency(res?.settings?.currency || "INR");
       } catch (err) {
         console.error("Failed to fetch pricing", err);
       } finally {
@@ -92,6 +88,23 @@ export default function BookAppointment() {
     };
     loadPricing();
   }, []);
+
+  const [consentAccepted, setConsentAccepted] = useState(false);
+
+  const getClinicPrice = () => {
+    if (!pricing) return null;
+
+    const city = selectedClinic.toUpperCase();
+
+    const pricingByCity = pricing.pricingByCity;
+
+    if (!pricingByCity || !pricingByCity[city]) return null;
+
+    return {
+      cutoff: pricingByCity[city].cutoffFee / 100,
+      discounted: pricingByCity[city].discountedFee / 100,
+    };
+  };
 
   const isPastDate = (dateStr: string) => {
     const today = new Date();
@@ -124,22 +137,34 @@ export default function BookAppointment() {
     );
   };
 
+  // get payment method
+  const getPaymentMethod = () => {
+    const city = selectedClinic.toUpperCase();
+
+    if (city === "DEHRADUN") return "PAY_ON_ARRIVAL";
+
+    return "ONLINE";
+  };
+  const paymentMethod = getPaymentMethod();
+
   // clinic display data
-  const clinicData: any = {
+  const clinicData: Record<string, any> = {
     DEHRADUN: {
       name: "Shri Mahant Indiresh Hospital, Dehradun",
       location: "Dehradun",
-      hours: "10:00 AM - 2:00 PM",
+      hours: "9:00 AM – 3:00 PM",
     },
+
     ROORKEE: {
       name: "Hemant Hospital, Roorkee",
       location: "Roorkee",
-      hours: "2nd & 4th Thursday 10:00 AM - 2:00 PM",
+      hours: "2nd & 4th Thursday 10:30 AM – 2:30 PM",
     },
+
     ONLINE: {
       name: "Online Consultation - Google Meet",
       location: "Google Meet",
-      hours: "10:00 AM - 2:00 PM",
+      hours: "5:00 PM – 7:00 PM",
     },
   };
 
@@ -314,6 +339,11 @@ export default function BookAppointment() {
     if (!name || !email || !phone || !age || !gender) {
       return toast.error("Fill patient details");
     }
+    if (!consentAccepted) {
+      return toast.error(
+        "Please accept the consultation consent before booking.",
+      );
+    }
 
     if (phone.length !== 10) {
       return toast.error("Enter a valid 10-digit phone number");
@@ -329,6 +359,7 @@ export default function BookAppointment() {
       const patientResp = (await api.post("/patients", {
         name,
         phone,
+        email,
         gender,
         age,
       })) as any;
@@ -349,10 +380,7 @@ export default function BookAppointment() {
           endTime: getEndTime(selectedTime),
 
           payment: {
-            amount: fee ? fee * 100 : undefined, // keep consistent with backend (paise)
-            currency,
             method: "PAY_ON_ARRIVAL",
-            status: "PENDING",
           },
         };
 
@@ -370,7 +398,9 @@ export default function BookAppointment() {
       // EXISTING FLOW: ONLINE PAYMENT
       // -----------------------------
       setOrderCreating(true);
-      const orderResp = await api.post("/payments/create-order");
+      const orderResp = await api.post("/payments/create-order", {
+        city: selectedClinic.toUpperCase(),
+      });
       setOrderCreating(false);
 
       const {
@@ -417,8 +447,6 @@ export default function BookAppointment() {
               startTime: selectedTime,
               endTime: getEndTime(selectedTime),
               payment: {
-                amount,
-                currency: orderCurrency,
                 method: "ONLINE",
                 razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
@@ -475,13 +503,11 @@ export default function BookAppointment() {
 
   // UI helpers
   const availableClinicKeys = allowedClinics.map((k) => k.toLowerCase());
-  const clinicsToRender = ["dehradun", "roorkee", "online"].filter((k) =>
-    availableClinicKeys.includes(k),
-  );
-  const isPhoneValid = phone?.length === 10;
+  const clinicsToRender = allowedClinics.map((c) => c.toLowerCase());
+  const price = getClinicPrice();
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-white to-blue-50">
+    <main className="min-h-screen bg-linear-to-b from-white to-blue-50">
       {/* HEADER */}
       <header className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -514,337 +540,259 @@ export default function BookAppointment() {
           {/* LEFT (Form) */}
           <div className="lg:col-span-2">
             <Card className="p-6 sm:p-8 shadow-md border border-gray-200 rounded-2xl bg-white">
-              <form onSubmit={handleBooking} className="space-y-8">
-                {/* ---------------- DATE + TIME ---------------- */}
+              <form onSubmit={handleBooking} className="space-y-10">
+                {/* ---------------- STEP 1 : DATE ---------------- */}
                 <div className="space-y-4">
                   <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-primary" /> Choose Date &
-                    Time
+                    <Clock className="w-5 h-5 text-primary" /> Step 1 — Select
+                    Date
                   </h2>
 
-                  {/* Date */}
-                  <div>
-                    <label className="text-sm font-medium">Select Date</label>
-                    <input
-                      type="date"
-                      value={selectedDate}
-                      onChange={(e) => {
-                        const date = e.target.value;
-                        setSelectedDate(date);
-                        setSelectedTime("");
+                  <input
+                    type="date"
+                    value={selectedDate}
+                    onChange={(e) => {
+                      const date = e.target.value;
+                      setSelectedDate(date);
+                      setSelectedTime("");
+                      setSelectedClinic("");
 
-                        // Past date → block
-                        if (isPastDate && isPastDate(date)) {
-                          setBlockedInfo &&
-                            setBlockedInfo({
-                              blocked: true,
-                              message: "Please select a future date",
-                            });
-                          return;
-                        }
+                      if (isPastDate(date)) {
+                        setBlockedInfo({
+                          blocked: true,
+                          message: "Please select a future date",
+                        });
+                        return;
+                      }
 
-                        // Valid date → remove block
-                        setBlockedInfo && setBlockedInfo({ blocked: false });
-                      }}
-                      className="w-full mt-2 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary transition"
-                      required
-                    />
+                      setBlockedInfo({ blocked: false });
+                    }}
+                    className="w-full px-4 py-3 border rounded-lg"
+                  />
 
-                    {slotsLoading && (
-                      <p className="text-sm text-gray-500 mt-2">
-                        Loading slots…
-                      </p>
-                    )}
-
-                    {isPastDate && isPastDate(selectedDate) && (
-                      <p className="text-red-600 text-sm mt-2">
-                        Please select a future date
-                      </p>
-                    )}
-
-                    {blockedInfo.blocked && (
-                      <p className="text-red-600 text-sm mt-2">
-                        {blockedInfo.message}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Time Slots (mobile-friendly horizontal scroll) */}
-                  <div>
-                    <label className="text-sm font-medium">
-                      Available Slots
-                    </label>
-                    <div className="mt-2">
-                      {/* If no date selected */}
-                      {!selectedDate ? (
-                        <p className="text-gray-500 text-sm">
-                          Select a date first
-                        </p>
-                      ) : slots.length === 0 ? (
-                        <p className="text-gray-500 text-sm">
-                          No slots available
-                        </p>
-                      ) : (
-                        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pb-1">
-                          {slots.map((s) => (
-                            <label
-                              key={s.startTime}
-                              className={`min-w-[110px] flex-shrink-0 p-2 sm:p-3 rounded-lg border text-center cursor-pointer transition select-none
-                                ${
-                                  selectedTime === s.startTime
-                                    ? "border-primary bg-blue-100"
-                                    : s.available
-                                      ? "border-gray-300 bg-white hover:border-primary"
-                                      : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
-                                }
-                              `}
-                            >
-                              <input
-                                type="radio"
-                                name="time"
-                                value={s.startTime}
-                                checked={selectedTime === s.startTime}
-                                onChange={(e) =>
-                                  setSelectedTime &&
-                                  setSelectedTime(e.target.value)
-                                }
-                                className="hidden"
-                                disabled={!s.available}
-                              />
-                              <div className="text-sm font-medium">
-                                {formatTimeDisplay
-                                  ? formatTimeDisplay(s.startTime)
-                                  : s.startTime}
-                              </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {s.available ? "Available" : "Booked"}
-                              </div>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t pt-6" />
-
-                {/* ---------------- CLINIC ---------------- */}
-                <div className="space-y-4">
-                  <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
-                    <MapPin className="w-5 h-5 text-primary" /> Choose Clinic
-                  </h2>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {clinicsToRender.map((key) => {
-                      const up = key.toUpperCase();
-                      return (
-                        <label
-                          key={key}
-                          className={`p-3 rounded-lg border cursor-pointer shadow-sm transition flex flex-col gap-1 h-full
-                          ${
-                            selectedClinic === key
-                              ? "border-primary bg-blue-50 shadow-md"
-                              : "border-gray-300 bg-white hover:border-primary"
-                          }
-                          `}
-                          onClick={() =>
-                            setSelectedClinic && setSelectedClinic(key)
-                          }
-                        >
-                          <div className="flex items-center justify-between">
-                            <p className="font-semibold text-sm">
-                              {clinicData[up]?.name || up}
-                            </p>
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            {clinicData[up]?.hours}
-                          </p>
-                        </label>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="border-t pt-6" />
-
-                {/* ---------------- PATIENT INFO ---------------- */}
-                <div className="space-y-4">
-                  <h2 className="text-xl sm:text-2xl font-bold">
-                    Patient Details
-                  </h2>
-                  <p className="text-xs text-gray-500">
-                    If you are booking for someone else, please enter the{" "}
-                    <strong>patient's phone number</strong> here.
-                  </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      value={name}
-                      onChange={(e) => setName && setName(e.target.value)}
-                      placeholder="Full Name"
-                      className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                      required
-                    />
-                    {showErrors && !name && (
-                      <p className="mt-2 text-sm text-red-600">
-                        Enter patient's name
-                      </p>
-                    )}
-
-                    <input
-                      value={email}
-                      onChange={(e) => setEmail && setEmail(e.target.value)}
-                      placeholder="Email"
-                      className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/30 focus:border-primary"
-                      required
-                    />
-                  </div>
-                  {showErrors && !email && (
-                    <p className="mt-2 text-sm text-red-600">
-                      Enter patient's email address
+                  {blockedInfo.blocked && (
+                    <p className="text-red-600 text-sm">
+                      {blockedInfo.message}
                     </p>
                   )}
+                </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
+                <div className="border-t pt-6" />
+
+                {/* ---------------- STEP 2 : CLINIC ---------------- */}
+                <div className="space-y-4">
+                  <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-primary" /> Step 2 — Choose
+                    Clinic
+                  </h2>
+
+                  {!selectedDate ? (
+                    <p className="text-gray-500 text-sm">Select a date first</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {clinicsToRender.map((key) => {
+                        const up = key.toUpperCase();
+                        return (
+                          <label
+                            key={key}
+                            className={`p-4 rounded-lg border cursor-pointer transition
+${
+  selectedClinic === key
+    ? "border-primary bg-blue-50"
+    : "border-gray-300 bg-white hover:border-primary"
+}
+`}
+                            onClick={() => {
+                              setSelectedClinic(key);
+                              setSelectedTime("");
+                            }}
+                          >
+                            <p className="font-semibold text-sm">
+                              {clinicData[up]?.name}
+                            </p>
+
+                            <p className="text-xs text-gray-500 mt-1">
+                              {clinicData[up]?.hours}
+                            </p>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t pt-6" />
+
+                {/* ---------------- STEP 3 : SLOTS ---------------- */}
+                <div className="space-y-4">
+                  <h2 className="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-primary" /> Step 3 — Choose
+                    Time Slot
+                  </h2>
+
+                  {!selectedClinic ? (
+                    <p className="text-gray-500 text-sm">Select clinic first</p>
+                  ) : slotsLoading ? (
+                    <p className="text-gray-500">Loading slots...</p>
+                  ) : slots.length === 0 ? (
+                    <p className="text-gray-500 text-sm">No slots available</p>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                      {slots.map((s) => (
+                        <label
+                          key={s.startTime}
+                          className={`p-3 rounded-lg border text-center cursor-pointer transition
+${
+  selectedTime === s.startTime
+    ? "border-primary bg-blue-100"
+    : s.available
+      ? "border-gray-300 hover:border-primary"
+      : "border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed"
+}
+`}
+                        >
+                          <input
+                            type="radio"
+                            name="time"
+                            value={s.startTime}
+                            checked={selectedTime === s.startTime}
+                            onChange={(e) => setSelectedTime(e.target.value)}
+                            className="hidden"
+                            disabled={!s.available}
+                          />
+
+                          <div className="text-sm font-medium">
+                            {formatTimeDisplay(s.startTime)}
+                          </div>
+
+                          <div className="text-xs text-gray-500">
+                            {s.available ? "Available" : "Booked"}
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="border-t pt-6" />
+
+                {/* ---------------- STEP 4 : PATIENT DETAILS ---------------- */}
+                {selectedTime && (
+                  <div className="space-y-4">
+                    <h2 className="text-xl sm:text-2xl font-bold">
+                      Step 4 — Patient Details
+                    </h2>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Full Name"
+                        className="px-4 py-3 border rounded-lg"
+                        required
+                      />
+
+                      <input
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Email"
+                        className="px-4 py-3 border rounded-lg"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <input
                         value={phone}
                         onChange={(e) => {
                           const digitsOnly = e.target.value.replace(/\D/g, "");
                           setPhone(digitsOnly.slice(0, 10));
                         }}
-                        placeholder="10-digit phone number"
-                        inputMode="numeric"
-                        pattern="\d{10}"
-                        maxLength={10}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg"
+                        placeholder="Phone number"
+                        className="px-4 py-3 border rounded-lg"
                         required
                       />
 
-                      {showErrors && (!phone || phone.length < 10) && (
-                        <p className="mt-2 text-sm text-red-600">
-                          Enter patient's valid 10-digit phone number
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
                       <input
                         type="number"
-                        value={age as any}
-                        onChange={(e) =>
-                          setAge &&
-                          setAge(e.target.value ? Number(e.target.value) : "")
-                        }
+                        value={age}
+                        onChange={(e) => setAge(Number(e.target.value))}
                         placeholder="Age"
-                        className="px-4 py-3 border border-gray-300 rounded-lg"
+                        className="px-4 py-3 border rounded-lg"
                         required
                       />
-                      {showErrors && (!age || Number(age) <= 0) && (
-                        <p className="mt-2 text-sm text-red-600">
-                          Enter patient's age
-                        </p>
-                      )}
                     </div>
-                  </div>
 
-                  {/* Gender */}
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">
-                      Gender
-                    </label>
                     <div className="flex gap-6">
-                      <label className="flex items-center gap-2">
+                      <label>
                         <input
                           type="radio"
-                          name="gender"
-                          value="M"
                           checked={gender === "M"}
-                          onChange={() => setGender && setGender("M")}
+                          onChange={() => setGender("M")}
                         />
-                        <span className="text-sm">Male</span>
+                        <span className="ml-2">Male</span>
                       </label>
 
-                      <label className="flex items-center gap-2">
+                      <label>
                         <input
                           type="radio"
-                          name="gender"
-                          value="F"
                           checked={gender === "F"}
-                          onChange={() => setGender && setGender("F")}
+                          onChange={() => setGender("F")}
                         />
-                        <span className="text-sm">Female</span>
+                        <span className="ml-2">Female</span>
                       </label>
                     </div>
-                    {showErrors && !gender && (
-                      <p className="text-sm text-red-600 mt-2">
-                        Select patient's gender
-                      </p>
-                    )}
                   </div>
-                </div>
+                )}
 
-                {/* SUBMIT (large button on desktop, bottom sticky on mobile) */}
                 <div className="border-t pt-6" />
 
-                {/* ---------------- PAYMENT METHOD ---------------- */}
-                <div className="space-y-4">
-                  {/* <h2 className="text-xl sm:text-2xl font-bold">
-                    Payment Method
-                  </h2> */}
+                {/* DISCLAIMER */}
+                <div className="bg-gray-50 border rounded-lg p-4 text-sm text-gray-600 space-y-3">
+                  <p className="font-medium text-gray-800">
+                    Telemedicine Consultation Consent
+                  </p>
 
-                  <div className="grid grid-cols-1 gap-3">
-                    {/* <label
-                      className={`p-4 rounded-lg border cursor-pointer transition ${
-                        paymentMethod === "ONLINE"
-                          ? "border-primary bg-blue-50"
-                          : "border-gray-300 bg-white hover:border-primary"
-                      }`}
-                      onClick={() => setPaymentMethod("ONLINE")}
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-sm">Pay Online</p>
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          checked={paymentMethod === "ONLINE"}
-                          onChange={() => setPaymentMethod("ONLINE")}
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Pay now using UPI / Card / Netbanking
-                      </p>
-                    </label> */}
+                  <p>
+                    I understand that this consultation may be conducted through
+                    telemedicine. I consent to the use of electronic
+                    communication and agree that the doctor may provide medical
+                    advice based on the information shared during the
+                    consultation.
+                  </p>
 
-                    <label
-                      className={`w-full p-4 rounded-lg border cursor-pointer transition ${
-                        paymentMethod === "PAY_ON_ARRIVAL"
-                          ? "border-primary bg-blue-50"
-                          : "border-gray-300 bg-white hover:border-primary"
-                      }`}
-                      onClick={() => setPaymentMethod("PAY_ON_ARRIVAL")}
-                    >
-                      <div className="flex items-center justify-between">
-                        <p className="font-semibold text-sm">Pay on Arrival</p>
-                        <input
-                          type="radio"
-                          name="paymentMethod"
-                          checked={paymentMethod === "PAY_ON_ARRIVAL"}
-                          onChange={() => setPaymentMethod("PAY_ON_ARRIVAL")}
-                        />
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Pay at the clinic before consultation
-                      </p>
-                    </label>
-                  </div>
-                  <Button className="w-full bg-primary text-white hover:bg-primary/90 rounded-lg text-lg py-6 font-semibold">
-                    Book Now
-                  </Button>
+                  <p>
+                    This consultation does not replace emergency medical care.
+                    If you are experiencing a medical emergency, please visit
+                    the nearest hospital immediately.
+                  </p>
+
+                  <label className="flex items-start gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={consentAccepted}
+                      onChange={(e) => setConsentAccepted(e.target.checked)}
+                      className="mt-1"
+                    />
+                    <span className="text-sm">
+                      I confirm that I have read and agree to the consultation
+                      consent and disclaimer.
+                    </span>
+                  </label>
                 </div>
 
-                <div className="lg:hidden" />
+                {/* BOOK BUTTON */}
+                <Button
+                  className="w-full bg-primary text-white hover:bg-primary/90 rounded-lg text-lg py-6 font-semibold"
+                  disabled={
+                    !selectedDate ||
+                    !selectedClinic ||
+                    !selectedTime ||
+                    !consentAccepted
+                  }
+                >
+                  Book Appointment
+                </Button>
               </form>
             </Card>
 
@@ -852,8 +800,8 @@ export default function BookAppointment() {
             <div className="mt-4 lg:hidden space-y-3">
               <Card className="p-4 shadow-sm rounded-2xl">
                 <p className="font-semibold">Need Assistance?</p>
-                <a href="tel:+919876543210" className="text-primary text-sm">
-                  +91 98765 43210
+                <a href="tel:+919816549972" className="text-primary text-sm">
+                  +91 98165 49972
                 </a>
               </Card>
             </div>
@@ -903,10 +851,19 @@ export default function BookAppointment() {
 
                     {pricingLoading ? (
                       <p className="text-gray-500">Loading…</p>
-                    ) : fee ? (
-                      <p className="font-bold text-xl text-primary">₹{fee}</p>
+                    ) : price ? (
+                      <>
+                        <p className="text-gray-400 line-through">
+                          ₹{price.cutoff}
+                        </p>
+                        <p className="font-bold text-xl text-primary">
+                          ₹{price.discounted}
+                        </p>
+                      </>
                     ) : (
-                      <p className="text-red-500 font-semibold">Unavailable</p>
+                      <p className="text-red-500 font-semibold">
+                        Pay at Clinic
+                      </p>
                     )}
                   </div>
                 </div>
@@ -928,7 +885,9 @@ export default function BookAppointment() {
         <div className="mx-auto max-w-3xl px-2 flex items-center justify-between gap-3">
           <div>
             <p className="text-xs text-gray-500">Consultation</p>
-            <p className="font-semibold text-sm">{fee ? `₹${fee}` : "—"}</p>
+            <p className="font-semibold text-sm">
+              {price ? `₹${price.discounted}` : "Pay at clinic"}
+            </p>
             <p className="text-xs text-gray-500">
               {selectedDate
                 ? new Date(selectedDate).toLocaleDateString("en-IN", {
@@ -946,10 +905,9 @@ export default function BookAppointment() {
               className="w-full py-5 text-sm font-semibold bg-primary text-white rounded-lg"
               disabled={
                 !selectedDate ||
+                !selectedClinic ||
                 !selectedTime ||
-                blockedInfo.blocked ||
-                loading ||
-                orderCreating
+                !consentAccepted
               }
               onClick={(e) => {
                 // Trigger the same submit used above. If your form has a ref, call ref.current.submit().

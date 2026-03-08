@@ -17,31 +17,38 @@ import {
  * - White background
  * - Accessible (aria attributes)
  */
-
 const STEPS = [
   {
     id: 1,
-    title: "Choose City & Date",
+    title: "Select Clinic, Date & Time",
     description:
-      "Pick the clinic location and a 30-minute appointment slot that fits your schedule.",
+      "Choose your preferred consultation location — Dehradun, Roorkee, or Online. Then select a convenient date and a 30-minute available appointment slot from the calendar.",
     icon: <Calendar className="w-5 h-5" />,
     color: "blue",
   },
   {
     id: 2,
-    title: "Provide Details & Pay",
+    title: "Enter Patient Details",
     description:
-      "Enter patient details (name, phone, age, gender) and complete secure payment. Upload documents if needed.",
-    icon: <CreditCard className="w-5 h-5" />,
+      "Provide the patient's basic information including name, phone number, age, and gender. You can also upload previous reports or prescriptions to help the doctor review your case in advance.",
+    icon: <Clock className="w-5 h-5" />,
     color: "rose",
   },
   {
     id: 3,
-    title: "Visit or Join Online",
+    title: "Secure Payment & Confirmation",
     description:
-      "Arrive at the clinic for an in-person consult or join on the scheduled google meet link from your device.",
-    icon: <Video className="w-5 h-5" />,
+      "Complete the secure online payment to confirm your appointment. Once successful, you will receive an email confirmation with your appointment details and instructions.",
+    icon: <CreditCard className="w-5 h-5" />,
     color: "emerald",
+  },
+  {
+    id: 4,
+    title: "Attend Your Consultation",
+    description:
+      "Visit the clinic at your scheduled time or join the Google Meet link provided in your confirmation email for online consultations.",
+    icon: <Video className="w-5 h-5" />,
+    color: "blue",
   },
 ];
 
@@ -88,7 +95,7 @@ export default function StepsNew() {
             {STEPS.map((s, idx) => (
               <div key={s.id} className="flex-1 flex">
                 <Card className="w-full p-6 md:p-8 flex flex-col justify-between border border-gray-100 shadow-sm">
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col items-start gap-4">
                     <div className="flex-shrink-0">
                       <StepBadge n={s.id} color={s.color} />
                     </div>

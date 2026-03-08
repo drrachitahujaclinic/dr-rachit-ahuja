@@ -36,8 +36,8 @@ const Navbar: React.FC = () => {
   // Book consultation logic
   const handleBook = () => {
     if (!user) {
-      setRedirect("/book-appointment");     // store where user wanted to go
-      handleGoogleLogin();      // trigger login popup
+      setRedirect("/book-appointment"); // store where user wanted to go
+      handleGoogleLogin(); // trigger login popup
       return;
     }
 
@@ -50,29 +50,41 @@ const Navbar: React.FC = () => {
     <nav className="sticky top-0 z-50 border-b border-border bg-white/95 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-
           {/* Logo */}
           <Link href="/">
             <div className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <Stethoscope className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-xl text-foreground">
+              <div className="flex flex-col">
+
+              <span className="font-bold text-lg text-foreground">
                 Dr. Rachit Ahuja
               </span>
+                <p className="text-xs">MD MRCP ECMO | Reg. No.: UKMC 3865</p>
+              
+              </div>
             </div>
           </Link>
-          
 
           {/* Desktop menu */}
           <div className="hidden md:flex items-center gap-8">
-            <Link href="/#services" className="text-sm hover:text-primary transition">
+            <Link
+              href="/#services"
+              className="text-sm hover:text-primary transition"
+            >
               Services
             </Link>
-            <Link href="/#about" className="text-sm hover:text-primary transition">
+            <Link
+              href="/#about"
+              className="text-sm hover:text-primary transition"
+            >
               About
             </Link>
-            <Link href="/#contact" className="text-sm hover:text-primary transition">
+            <Link
+              href="/#contact"
+              className="text-sm hover:text-primary transition"
+            >
               Contact
             </Link>
 
@@ -90,7 +102,10 @@ const Navbar: React.FC = () => {
             )}
 
             {/* BOOK BUTTON with login-first logic */}
-            <Button className="bg-primary hover:bg-primary/90" onClick={handleBook}>
+            <Button
+              className="bg-primary hover:bg-primary/90"
+              onClick={handleBook}
+            >
               Book Consultation
             </Button>
           </div>
@@ -116,13 +131,21 @@ const Navbar: React.FC = () => {
       >
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex flex-col gap-3">
-            <Link href="#services" onClick={() => setOpen(false)} className="py-2">
+            <Link
+              href="#services"
+              onClick={() => setOpen(false)}
+              className="py-2"
+            >
               Services
             </Link>
             <Link href="#about" onClick={() => setOpen(false)} className="py-2">
               About
             </Link>
-            <Link href="#contact" onClick={() => setOpen(false)} className="py-2">
+            <Link
+              href="#contact"
+              onClick={() => setOpen(false)}
+              className="py-2"
+            >
               Contact
             </Link>
 

@@ -2,7 +2,7 @@
 
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { Phone, CalendarDays } from "lucide-react";
+import { Phone, CalendarDays, Calendar } from "lucide-react";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useAuthStore } from "@/lib/auth";
 import { useRouter } from "next/navigation";
@@ -72,7 +72,7 @@ const Hero = () => {
           </h1>
 
           <p className="text-lg sm:text-xl text-gray-700 max-w-xl leading-relaxed mx-auto lg:mx-0">
-            Senior Medical Oncologist offering evidence-based treatment tailored
+            Senior Clinical Oncologist offering evidence-based treatment tailored
             to your needs. Book a consultation and take the next step toward
             healing.
           </p>
@@ -96,8 +96,18 @@ const Hero = () => {
               className="border-primary rounded-full text-primary hover:bg-blue-50 px-10 py-6 text-lg flex items-center gap-2"
               asChild
             >
-              <a href="tel:+919876543210">
+              <a href="tel:+919816549972">
                 <Phone className="w-5 h-5" /> Call Clinic
+              </a>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="rounded-full bg-primary text-white px-10 py-6 text-lg flex items-center gap-2"
+              asChild
+            >
+              <a href="/book-appointment">
+                <Calendar className="w-5 h-5" /> Book Appointment
               </a>
             </Button>
           </div>

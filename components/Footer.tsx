@@ -19,12 +19,15 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
           {/* Brand + CTA (first column) */}
           <div className="md:col-span-1">
-            <h3 className="text-lg font-bold mb-3">Dr. Rachit Ahuja</h3>
-            <p className="text-sm text-white/80 mb-4">
-              Compassionate, expert cancer care.
+            <h3 className="text-lg font-bold mb-1">Dr. Rachit Ahuja</h3>
+            <p className="text-xs text-white">
+              MD MRCP ECMO
             </p>
 
-            {/* Primary action — prominent but minimal */}
+            <p className="text-xs text-white/70 mb-3">
+              Medical Registration: UKMC 3865
+            </p>
+
             <div className="mt-2">
               <Link href="/book-appointment" className="inline-block">
                 <button
@@ -36,8 +39,6 @@ export default function Footer() {
               </Link>
             </div>
           </div>
-
-          
 
           {/* About */}
           <div className="text-sm">
@@ -67,21 +68,22 @@ export default function Footer() {
 
             <p className="text-white/90">
               Phone:{" "}
-              <a href="tel:+919876543210" className="hover:underline">
-                +91 98765 43210
+              <a href="tel:+919816549972" className="hover:underline">
+                +91 98165 49972
               </a>
             </p>
 
             <p className="mt-2 text-white/90">
               Email:{" "}
-              <a href="mailto:info@excellenceoncology.com" className="hover:underline">
-                info@excellenceoncology.com
+              <a
+                href="mailto:info@excellenceoncology.com"
+                className="hover:underline"
+              >
+                rachitahuja.dr@gmail.com
               </a>
             </p>
 
-            <p className="mt-4 text-xs text-white/70">
-              Shri Mahant Indiresh Hospital — Dehradun
-            </p>
+            
           </address>
         </div>
 

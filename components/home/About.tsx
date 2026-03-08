@@ -33,7 +33,7 @@ const About = () => {
 
               {/* Floating Badge */}
               <div className="absolute -bottom-6 -right-4 sm:-right-6 bg-white shadow-lg border border-gray-100 px-5 py-3 sm:px-7 sm:py-4 rounded-2xl text-center">
-                <p className="text-2xl sm:text-3xl font-bold text-primary">15+</p>
+                <p className="text-2xl sm:text-3xl font-bold text-primary">12+</p>
                 <p className="text-[10px] sm:text-xs text-gray-600 uppercase">Years Exp.</p>
               </div>
             </div>
@@ -47,19 +47,19 @@ const About = () => {
 
             <div className="space-y-4 sm:space-y-5 text-gray-700 text-base sm:text-lg leading-relaxed mb-8">
               <p>
-                Dr. Rachit Ahuja is a senior medical oncologist with{" "}
-                <strong className="text-gray-900">15+ years of experience</strong> in
+                Dr. Rachit Ahuja is a senior clinical oncologist with{" "}
+                <strong className="text-gray-900">12+ years of experience</strong> in
                 modern cancer treatment and patient-centered care.
               </p>
 
               <p>
-                He specializes in chemotherapy, targeted therapy, immunotherapy,
-                and personalized oncology plans designed for individualized healing.
+                He specializes in chemotherapy, targeted therapy, immunotherapy, radiotherapy
+                and personalized precision oncology plans designed for individualized healing.
               </p>
 
               <p>
                 Having treated{" "}
-                <strong className="text-gray-900">over 1,000 patients</strong>, he
+                <strong className="text-gray-900">over 10,000 patients</strong>, he
                 is known for his evidence-based approach and compassionate care.
               </p>
             </div>
@@ -69,14 +69,14 @@ const About = () => {
               {/* STAT 1 */}
               <div className="bg-white shadow rounded-xl p-4 sm:p-5 border border-blue-100 text-center">
                 <HeartPulse className="w-6 h-6 sm:w-7 sm:h-7 text-primary mx-auto mb-2" />
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">1000+</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">10,000+</p>
                 <p className="text-[10px] sm:text-sm text-gray-600 font-medium">Patients</p>
               </div>
 
               {/* STAT 2 */}
               <div className="bg-white shadow rounded-xl p-4 sm:p-5 border border-blue-100 text-center">
                 <Award className="w-6 h-6 sm:w-7 sm:h-7 text-primary mx-auto mb-2" />
-                <p className="text-xl sm:text-2xl font-bold text-gray-900">15+ yrs</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">12+ yrs</p>
                 <p className="text-[10px] sm:text-sm text-gray-600 font-medium">Experience</p>
               </div>
 

@@ -7,17 +7,6 @@ import { useAuthStore } from "@/lib/auth";
 import toast from "react-hot-toast";
 import { Calendar, Clock, MapPin, Video, ArrowRight } from "lucide-react";
 
-/**
- * AppointmentsPage (redesigned)
- *
- * - Clean, minimal, non-overlapping layout
- * - Hero with Book Consultation as first action below title
- * - Compact contact/clinic info block
- * - Responsive appointments list with clear columns (date/time, details, status/action)
- * - Loading skeleton + friendly empty state
- *
- * Keeps your original variable names (appointments, formatDate, formatTime, clinicData, etc.)
- */
 
 export default function AppointmentsPage() {
   const user = useAuthStore((s) => s.user);
@@ -122,8 +111,8 @@ export default function AppointmentsPage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="col-span-1 bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
             <h2 id="contact-heading" className="text-sm font-semibold text-gray-700">Contact</h2>
-            <p className="mt-2 text-sm text-gray-600">Phone: <a href="tel:+919876543210" className="text-primary">+91 98765 43210</a></p>
-            <p className="mt-1 text-sm text-gray-600">Email: <a href="mailto:info@excellenceoncology.com" className="text-primary">info@excellenceoncology.com</a></p>
+            <p className="mt-2 text-sm text-gray-600">Phone: <a href="tel:+919816549972" className="text-primary">+91 98765 43210</a></p>
+            <p className="mt-1 text-sm text-gray-600">Email: <a href="mailto:rachitahuja.dr@gmail.com" className="text-primary">rachitahuja.dr@gmail.com</a></p>
           </div>
 
           

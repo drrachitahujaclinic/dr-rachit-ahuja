@@ -1,243 +1,214 @@
+"use client";
+
 import React, { useId, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Search } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Search,
+  Clock,
+  Video,
+  Calendar,
+} from "lucide-react";
 
 type FAQItem = { q: string; a: string };
 
-/**
- * FAQ.tsx
- * - Mobile-first, white background
- * - Accessible accordion (single-expand by default)
- * - Search/filter + keyboard navigation
- * - Smooth, safe height transitions (respects prefers-reduced-motion)
- */
-
-const DEFAULT_FAQS: FAQItem[] = [
+const FAQS: FAQItem[] = [
   {
-    q: "What are the clinic timings?",
-    a: "Roorkee clinic operates on 2nd & 4th Thursday from 10:00 AM – 2:00 PM IST. Dehradun clinic operates Monday to Saturday, 10:00 AM – 2:00 PM IST (Sunday Closed).",
+    q: "How do I book an appointment?",
+    a: "You can book an appointment online by selecting your preferred clinic location (Dehradun, Roorkee, or Online), choosing an available date and time slot, entering patient details, and completing secure payment.",
   },
   {
-    q: "Do you offer online consultations?",
-    a: "Yes, we offer video consultations for follow-up appointments and second opinions. Initial consultations typically require an in-person visit for comprehensive evaluation.",
+    q: "Which clinic locations are available?",
+    a: "Consultations are available at Shri Mahant Indiresh Hospital in Dehradun and Hemant Hospital in Roorkee. Online consultations are conducted through Google Meet.",
   },
   {
-    q: "What payment methods do you accept?",
-    a: "We accept all major credit/debit cards, online bank transfers, and digital payment methods. Payment can be made during booking for guaranteed appointment slots.",
+    q: "What are the consultation timings?",
+    a: "Dehradun clinic operates Monday to Saturday from 9:00 AM – 3:00 PM. Roorkee clinic operates on the 2nd and 4th Thursday from 10:30 AM – 2:30 PM. Online consultations are typically scheduled between 5:00 PM – 7:00 PM.",
   },
   {
-    q: "How long is each appointment?",
-    a: "Each appointment is 30 minutes long. This includes consultation, discussion of treatment options, and any necessary recommendations.",
+    q: "How long does a consultation last?",
+    a: "Each consultation typically lasts around 30 minutes. This allows enough time to review medical history, discuss symptoms, examine reports, and provide treatment recommendations.",
+  },
+  {
+    q: "Can I upload medical reports before the consultation?",
+    a: "Yes. During booking you can upload reports, prescriptions, scans, or laboratory results. This helps the doctor review your case before the consultation.",
+  },
+  {
+    q: "How will I receive confirmation of my appointment?",
+    a: "Once your payment is completed, you will receive a confirmation email with your appointment details. Online consultations will also include your Google Meet link.",
+  },
+  {
+    q: "What payment methods are accepted?",
+    a: "We accept UPI, debit cards, credit cards, and net banking payments. Online payment ensures your appointment slot is reserved and confirmed instantly.",
+  },
+  {
+    q: "What should I bring for a clinic consultation?",
+    a: "Please bring previous medical reports, imaging scans (CT/MRI/PET), pathology reports, prescriptions, and any medications you are currently taking.",
+  },
+  {
+    q: "Who should book an online consultation?",
+    a: "Online consultations are suitable for follow-ups, second opinions, and discussing reports. Some conditions may require an in-person visit for detailed evaluation.",
   },
 ];
 
-function usePrefersReducedMotion() {
-  if (typeof window === "undefined") return false;
-  try {
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  } catch {
-    return false;
-  }
-}
-
-/** Animated collapse: controlled maxHeight with CSS transition (respects reduced motion) */
 function Collapsible({
-  isOpen,
+  open,
   children,
   id,
 }: {
-  isOpen: boolean;
+  open: boolean;
   children: React.ReactNode;
   id: string;
 }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const reduced = usePrefersReducedMotion();
-
-  // inline styles to animate maxHeight
-  const style: React.CSSProperties = {
-    overflow: "hidden",
-    transition: reduced ? "none" : "max-height 320ms cubic-bezier(0.2, 0.8, 0.2, 1)",
-    maxHeight: isOpen ? `${ref.current?.scrollHeight ?? 0}px` : "0px",
-  };
+  const ref = useRef<HTMLDivElement>(null);
 
   return (
-    <div id={id} ref={ref} style={style} aria-hidden={!isOpen}>
-      <div className="pt-2 pb-4 text-sm leading-relaxed text-gray-700">{children}</div>
-    </div>
-  );
-}
-
-function FaqItem({
-  index,
-  faq,
-  isOpen,
-  onToggle,
-  labelId,
-  panelId,
-}: {
-  index: number;
-  faq: FAQItem;
-  isOpen: boolean;
-  onToggle: () => void;
-  labelId: string;
-  panelId: string;
-}) {
-  return (
-    <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden">
-      <h3 className="m-0">
-        <button
-          id={labelId}
-          aria-controls={panelId}
-          aria-expanded={isOpen}
-          onClick={onToggle}
-          className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
-        >
-          <span className="flex-1 text-sm md:text-base font-medium text-foreground">{faq.q}</span>
-          <span className="ml-4 flex items-center gap-2">
-            <span className="text-xs text-gray-400 hidden sm:inline">Answer</span>
-            {isOpen ? (
-              <ChevronUp className="w-5 h-5 text-primary" aria-hidden />
-            ) : (
-              <ChevronDown className="w-5 h-5 text-primary" aria-hidden />
-            )}
-          </span>
-        </button>
-      </h3>
-
-      <Collapsible isOpen={isOpen} id={panelId}>
-        <div role="region" aria-labelledby={labelId} className="px-5">
-          {faq.a}
-        </div>
-      </Collapsible>
+    <div
+      id={id}
+      ref={ref}
+      style={{
+        maxHeight: open ? `${ref.current?.scrollHeight ?? 0}px` : "0px",
+        transition: "max-height 0.3s ease",
+        overflow: "hidden",
+      }}
+      aria-hidden={!open}
+    >
+      <div className="pt-2 pb-4 text-sm text-gray-700 leading-relaxed">
+        {children}
+      </div>
     </div>
   );
 }
 
 export default function FAQ() {
   const uid = useId();
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+  const [expanded, setExpanded] = useState<number | null>(0);
   const [query, setQuery] = useState("");
-  const [allowMultiple, setAllowMultiple] = useState(false); // toggle to allow multiple open if needed
-  const itemsRef = useRef<Array<HTMLButtonElement | null>>([]);
+
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return DEFAULT_FAQS;
-    return DEFAULT_FAQS.filter(
-      (f) => f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q)
+    const q = query.toLowerCase();
+    return FAQS.filter(
+      (f) =>
+        f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q)
     );
   }, [query]);
 
-  // Keyboard navigation helpers (Arrow up/down to move between question buttons)
-  const onKeyDownNav = (e: React.KeyboardEvent, idx: number) => {
-    const max = filtered.length;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      const nxt = (idx + 1) % max;
-      itemsRef.current[nxt]?.focus();
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      const prev = (idx - 1 + max) % max;
-      itemsRef.current[prev]?.focus();
-    } else if (e.key === "Home") {
-      e.preventDefault();
-      itemsRef.current[0]?.focus();
-    } else if (e.key === "End") {
-      e.preventDefault();
-      itemsRef.current[max - 1]?.focus();
-    }
-  };
-
   return (
-    <section id="faq" className="bg-blue-50 py-12 md:py-16">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+    <section className="bg-white py-16 md:py-20">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+
         {/* Header */}
-        <div className="text-center mb-8 md:mb-12">
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-3">
+        <header className="text-center mb-12">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
             Frequently Asked Questions
           </h2>
-          <p className="text-sm md:text-base text-gray-600 max-w-2xl mx-auto">
-            Find quick answers about appointments, payments, cancellations and more.
+
+          <p className="mt-4 text-gray-600 max-w-xl mx-auto">
+            Find answers about appointments, consultation options,
+            clinic timings, payments, and online consultations.
           </p>
+        </header>
+
+        {/* Quick Info Cards */}
+        <div className="grid md:grid-cols-3 gap-4 mb-10">
+
+          <div className="p-5 border rounded-xl bg-gray-50">
+            <Clock className="w-5 h-5 text-primary mb-2" />
+            <h3 className="font-semibold text-gray-900">
+              30 Minute Consultations
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Each appointment is scheduled for approximately 30 minutes.
+            </p>
+          </div>
+
+          <div className="p-5 border rounded-xl bg-gray-50">
+            <Video className="w-5 h-5 text-primary mb-2" />
+            <h3 className="font-semibold text-gray-900">
+              Online Consultations
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Secure video consultations available through Google Meet.
+            </p>
+          </div>
+
+          <div className="p-5 border rounded-xl bg-gray-50">
+            <Calendar className="w-5 h-5 text-primary mb-2" />
+            <h3 className="font-semibold text-gray-900">
+              Instant Confirmation
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Appointments are confirmed immediately after payment.
+            </p>
+          </div>
+
         </div>
 
-        {/* Controls */}
-        
-        {/* FAQs list */}
-        <div className="space-y-3" role="list" aria-label="FAQ list">
-          {filtered.length === 0 && (
-            <div className="p-6 bg-white border border-gray-100 rounded-lg text-center text-sm text-gray-500">
-              No results found for “{query}”
-            </div>
-          )}
+        {/* Search */}
+        <div className="relative mb-8">
+          <Search className="absolute left-3 top-4 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search questions..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full pl-9 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary outline-none"
+          />
+        </div>
 
-          {filtered.map((faq, idx) => {
-            const globalIndex = idx; // index in filtered list
-            const labelId = `faq-${uid}-label-${idx}`;
-            const panelId = `faq-${uid}-panel-${idx}`;
-            const isOpen = allowMultiple ? false /* multiple-mode not tracking here */ : expandedIndex === globalIndex;
+        {/* FAQ Accordion */}
+        <div className="space-y-3">
+          {filtered.map((faq, i) => {
+            const open = expanded === i;
+            const label = `faq-${uid}-${i}`;
+            const panel = `panel-${uid}-${i}`;
 
-            // In multiple-open mode we'll treat the single list as simple toggle: open if index equals expandedIndex
-            // To fully support multiple opens you'd need an array of booleans — keep single-open default because it's simpler and clearer.
             return (
-              <div key={labelId} role="listitem">
-                <div className="bg-white border border-gray-100 rounded-lg shadow-sm overflow-hidden">
-                  <h3 className="m-0">
-                    <button
-                      id={labelId}
-                      aria-controls={panelId}
-                      aria-expanded={isOpen}
-                      onClick={() => {
-                        if (allowMultiple) {
-                          // naive toggle behavior: open clicked item, but allowMultiple would ideally maintain an array.
-                          // For simplicity, in allowMultiple mode we toggle same single open index behavior.
-                          setExpandedIndex((s) => (s === globalIndex ? null : globalIndex));
-                        } else {
-                          setExpandedIndex((s) => (s === globalIndex ? null : globalIndex));
-                        }
-                      }}
-                      onKeyDown={(e) => onKeyDownNav(e, globalIndex)}
-                      className="w-full text-left px-5 py-4 flex items-center justify-between gap-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3">
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/5 text-primary text-sm font-medium">
-                            {globalIndex + 1}
-                          </span>
-                          <span className="text-sm md:text-base font-medium text-foreground">
-                            {faq.q}
-                          </span>
-                        </div>
-                      </div>
+              <div
+                key={label}
+                className="border rounded-lg bg-white shadow-sm"
+              >
+                <button
+                  id={label}
+                  aria-expanded={open}
+                  aria-controls={panel}
+                  onClick={() =>
+                    setExpanded((s) => (s === i ? null : i))
+                  }
+                  className="w-full flex items-center justify-between px-5 py-4 text-left"
+                >
+                  <span className="flex items-center gap-3">
+                    <span className="w-7 h-7 flex items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-medium">
+                      {i + 1}
+                    </span>
 
-                      <span className="ml-4 flex items-center gap-2 text-gray-400">
-                        {expandedIndex === globalIndex ? (
-                          <ChevronUp className="w-5 h-5 text-primary" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-primary" />
-                        )}
-                      </span>
-                    </button>
-                  </h3>
+                    <span className="font-medium text-gray-900">
+                      {faq.q}
+                    </span>
+                  </span>
 
-                  <Collapsible isOpen={expandedIndex === globalIndex} id={panelId}>
-                    <div role="region" aria-labelledby={labelId} className="px-5">
-                      {faq.a}
-                    </div>
-                  </Collapsible>
-                </div>
+                  {open ? (
+                    <ChevronUp className="w-5 h-5 text-primary" />
+                  ) : (
+                    <ChevronDown className="w-5 h-5 text-primary" />
+                  )}
+                </button>
+
+                <Collapsible open={open} id={panel}>
+                  <div className="px-5">{faq.a}</div>
+                </Collapsible>
               </div>
             );
           })}
+
+          {filtered.length === 0 && (
+            <div className="text-center text-gray-500 py-6">
+              No questions found.
+            </div>
+          )}
         </div>
 
-        {/* Bottom CTA */}
-        <div className="mt-8 text-center">
-          <a
-            href="/contact"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-primary text-white font-medium hover:bg-primary/95"
-          >
-            Still have questions? Contact us
-          </a>
-        </div>
+        
       </div>
     </section>
   );
