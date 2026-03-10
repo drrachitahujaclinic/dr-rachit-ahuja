@@ -26,12 +26,6 @@ export default function RootLayout({
     <html lang="en">
   <body className={`${dmSans.className} font-sans antialiased`}>
 
-    <Script src="https://cdn.jsdelivr.net/npm/eruda" strategy="afterInteractive" />
-
-    <Script id="eruda-init" strategy="afterInteractive">
-      {`eruda.init();`}
-    </Script>
-
     <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
       <Navbar />
       {children}

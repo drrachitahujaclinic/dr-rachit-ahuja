@@ -26,24 +26,24 @@ import toast from "react-hot-toast";
 
 /** clinicData left intact */
 const clinicData: Record<string, any> = {
-    DEHRADUN: {
-      name: "Shri Mahant Indiresh Hospital, Dehradun",
-      location: "Dehradun",
-      hours: "9:00 AM – 3:00 PM",
-    },
+  DEHRADUN: {
+    name: "Shri Mahant Indiresh Hospital, Dehradun",
+    location: "Dehradun",
+    hours: "9:00 AM – 3:00 PM",
+  },
 
-    ROORKEE: {
-      name: "Hemant Hospital, Roorkee",
-      location: "Roorkee",
-      hours: "2nd & 4th Thursday 10:30 AM – 2:30 PM",
-    },
+  ROORKEE: {
+    name: "Hemant Hospital, Roorkee",
+    location: "Roorkee",
+    hours: "2nd & 4th Thursday 10:30 AM – 2:30 PM",
+  },
 
-    ONLINE: {
-      name: "Online Consultation - Google Meet",
-      location: "Google Meet",
-      hours: "5:00 PM – 7:00 PM",
-    },
-  };
+  ONLINE: {
+    name: "Online Consultation - Google Meet",
+    location: "Google Meet",
+    hours: "5:00 PM – 7:00 PM",
+  },
+};
 
 export default function AppointmentConfirmedPage() {
   const router = useRouter();
@@ -51,6 +51,8 @@ export default function AppointmentConfirmedPage() {
   const [appointment, setAppointment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [prescriptionLoading, setPrescriptionLoading] = useState(false);
 
   // upload state
   const [uploading, setUploading] = useState(false);
@@ -73,13 +75,40 @@ export default function AppointmentConfirmedPage() {
     }
   };
 
+  const fetchPrescriptions = async () => {
+    try {
+      setPrescriptionLoading(true);
+
+      const res = (await api.get(
+        `/appointments/${appointmentId}/prescriptions`,
+      )) as any;
+
+      const processed = (res.prescriptions || []).map((p: any) => ({
+        ...p,
+        url: p.pdfDocumentId?.s3Key
+          ? `${process.env.NEXT_PUBLIC_AWS_URL}/${p.pdfDocumentId.s3Key}`
+          : null,
+      }));
+
+      setPrescriptions(processed);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setPrescriptionLoading(false);
+    }
+  };
+
   useEffect(() => {
     mountedRef.current = true;
-    if (appointmentId) fetchAppointment();
+
+    if (appointmentId) {
+      fetchAppointment();
+      fetchPrescriptions();
+    }
+
     return () => {
       mountedRef.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointmentId]);
 
   // helper formatters
@@ -130,7 +159,10 @@ export default function AppointmentConfirmedPage() {
           }
         };
 
-        xhr.onload = () => (xhr.status >= 200 && xhr.status < 300 ? resolve() : reject(xhr.statusText));
+        xhr.onload = () =>
+          xhr.status >= 200 && xhr.status < 300
+            ? resolve()
+            : reject(xhr.statusText);
         xhr.onerror = () => reject(new Error("Upload failed"));
         xhr.send(file);
       });
@@ -207,7 +239,11 @@ export default function AppointmentConfirmedPage() {
   // page data
   const patient = appointment.patientId || {};
   const isOnline = appointment.city === "ONLINE";
-  const clinic = clinicData[appointment.city] || { name: appointment.city || "Clinic", location: "", hours: "" };
+  const clinic = clinicData[appointment.city] || {
+    name: appointment.city || "Clinic",
+    location: "",
+    hours: "",
+  };
   const meetLink = appointment?.meet?.link;
 
   // status pill classes
@@ -215,8 +251,8 @@ export default function AppointmentConfirmedPage() {
     appointment.status === "confirmed"
       ? "bg-green-50 text-green-800"
       : appointment.status === "cancelled"
-      ? "bg-red-50 text-red-800"
-      : "bg-yellow-50 text-yellow-800";
+        ? "bg-red-50 text-red-800"
+        : "bg-yellow-50 text-yellow-800";
 
   return (
     <main className="min-h-screen bg-gray-50 pb-20">
@@ -224,13 +260,24 @@ export default function AppointmentConfirmedPage() {
       <header className="bg-white border-b sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-gray-900">Appointment Details</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Reference: <span className="font-mono text-xs text-gray-600">{appointment._id}</span></p>
+            <h1 className="text-lg font-semibold text-gray-900">
+              Appointment Details
+            </h1>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Reference:{" "}
+              <span className="font-mono text-xs text-gray-600">
+                {appointment._id}
+              </span>
+            </p>
           </div>
 
           <div className="hidden sm:flex items-center gap-3">
-            <Button onClick={() => router.push("/appointments")}>All Appointments</Button>
-            <Button variant="outline" onClick={() => router.push("/")}>Home</Button>
+            <Button onClick={() => router.push("/appointments")}>
+              All Appointments
+            </Button>
+            <Button variant="outline" onClick={() => router.push("/")}>
+              Home
+            </Button>
           </div>
         </div>
       </header>
@@ -240,9 +287,7 @@ export default function AppointmentConfirmedPage() {
         {/* Main content (left, spans 2 cols on desktop) */}
         <div className="lg:col-span-2 space-y-6">
           {/* Status banner */}
-          <div aria-live="polite">
-            {renderStatusBanner(appointment.status)}
-          </div>
+          <div aria-live="polite">{renderStatusBanner(appointment.status)}</div>
 
           {/* Patient card */}
           <section className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
@@ -257,14 +302,28 @@ export default function AppointmentConfirmedPage() {
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <p className="text-xs text-gray-500 uppercase">Patient</p>
-                    <p className="text-lg font-medium text-gray-900">{patient.name || "—"}</p>
-                    <p className="text-sm text-gray-600 mt-1">Phone: <a href={`tel:${patient.phone}`} className="text-primary">{patient.phone}</a></p>
+                    <p className="text-lg font-medium text-gray-900">
+                      {patient.name || "—"}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Phone:{" "}
+                      <a href={`tel:${patient.phone}`} className="text-primary">
+                        {patient.phone}
+                      </a>
+                    </p>
                   </div>
 
                   <div className="text-right">
-                    <p className="text-xs text-gray-500 uppercase">Gender / Age</p>
+                    <p className="text-xs text-gray-500 uppercase">
+                      Gender / Age
+                    </p>
                     <p className="font-medium text-gray-800">
-                      {patient.gender === "M" ? "Male" : patient.gender === "F" ? "Female" : "—"} {patient.age ? ` · ${patient.age}` : ""}
+                      {patient.gender === "M"
+                        ? "Male"
+                        : patient.gender === "F"
+                          ? "Female"
+                          : "—"}{" "}
+                      {patient.age ? ` · ${patient.age}` : ""}
                     </p>
                   </div>
                 </div>
@@ -283,22 +342,33 @@ export default function AppointmentConfirmedPage() {
 
               <div className="min-w-0">
                 <h2 className="text-xs text-gray-500 uppercase">Appointment</h2>
-                <p className="text-lg font-medium text-gray-900 mt-1">{formattedDate}</p>
+                <p className="text-lg font-medium text-gray-900 mt-1">
+                  {formattedDate}
+                </p>
 
                 <div className="mt-3 flex flex-wrap gap-4 items-center text-sm text-gray-600">
                   <div className="inline-flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-400" />
-                    <span>{formatTime(appointment.startTime)} – {formatTime(appointment.endTime)}</span>
+                    <span>
+                      {formatTime(appointment.startTime)} –{" "}
+                      {formatTime(appointment.endTime)}
+                    </span>
                   </div>
 
                   <div className="inline-flex items-center gap-2">
-                    {isOnline ? <Video className="w-4 h-4 text-blue-500" /> : <MapPin className="w-4 h-4 text-red-500" />}
+                    {isOnline ? (
+                      <Video className="w-4 h-4 text-blue-500" />
+                    ) : (
+                      <MapPin className="w-4 h-4 text-red-500" />
+                    )}
                     <span>{clinic.name}</span>
                   </div>
 
                   <div className="inline-flex items-center gap-2">
                     <BadgeCheck className="w-4 h-4 text-gray-400" />
-                    <span className="text-xs text-gray-500">Slot: 30 minutes</span>
+                    <span className="text-xs text-gray-500">
+                      Slot: 30 minutes
+                    </span>
                   </div>
                 </div>
 
@@ -329,7 +399,9 @@ export default function AppointmentConfirmedPage() {
 
               <div>
                 <h3 className="text-xs text-gray-500 uppercase">Clinic</h3>
-                <p className="text-lg font-medium text-gray-900 mt-1">{clinic.name}</p>
+                <p className="text-lg font-medium text-gray-900 mt-1">
+                  {clinic.name}
+                </p>
                 <p className="text-sm text-gray-600">{clinic.location}</p>
                 <p className="text-xs text-gray-500 mt-2">{clinic.hours}</p>
 
@@ -344,7 +416,10 @@ export default function AppointmentConfirmedPage() {
                   </a>
 
                   {!isOnline && (
-                    <a className="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm" href={`tel:+919816549972`}>
+                    <a
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm"
+                      href={`tel:+919816549972`}
+                    >
                       <Phone className="w-4 h-4" /> Call
                     </a>
                   )}
@@ -364,8 +439,15 @@ export default function AppointmentConfirmedPage() {
 
               <div>
                 <h3 className="text-xs text-gray-500 uppercase">Payment</h3>
-                <p className="text-lg font-medium text-gray-900 mt-1">₹{(appointment.payment?.amount || 0) / 100}</p>
-                <p className="text-sm text-gray-600 mt-1">Status: <span className="font-semibold text-green-600">{appointment.payment?.status || "—"}</span></p>
+                <p className="text-lg font-medium text-gray-900 mt-1">
+                  ₹{(appointment.payment?.amount || 0) / 100}
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Status:{" "}
+                  <span className="font-semibold text-green-600">
+                    {appointment.payment?.status || "—"}
+                  </span>
+                </p>
               </div>
             </div>
           </section>
@@ -375,7 +457,11 @@ export default function AppointmentConfirmedPage() {
             <div className="flex items-center justify-between gap-4 mb-4">
               <h3 className="text-lg font-semibold">Uploaded Documents</h3>
               <div className="flex items-center gap-3">
-                <Button onClick={pickFile} disabled={uploading} className="inline-flex items-center gap-2">
+                <Button
+                  onClick={pickFile}
+                  disabled={uploading}
+                  className="inline-flex items-center gap-2"
+                >
                   <UploadCloud /> Upload
                 </Button>
                 <Button variant="outline" onClick={() => fetchAppointment()}>
@@ -388,14 +474,77 @@ export default function AppointmentConfirmedPage() {
             {uploading && (
               <div className="mb-4">
                 <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary transition-all" style={{ width: `${uploadProgress}%` }} />
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
                 </div>
                 <p className="text-xs text-gray-500 mt-2">{uploadProgress}%</p>
               </div>
             )}
 
             {/* documents grid */}
-            <AppointmentDocuments initialDocuments={documents} appointmentId={appointment._id}/>
+            <AppointmentDocuments
+              initialDocuments={documents}
+              appointmentId={appointment._id}
+            />
+          </section>
+
+          {/* Prescriptions */}
+          <section className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
+            <h3 className="text-lg font-semibold mb-4">Prescriptions</h3>
+
+            {prescriptions.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                No prescriptions available yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {prescriptions.map((rx: any) => (
+                  <div
+                    key={rx._id}
+                    className="flex items-center justify-between border rounded-lg p-4"
+                  >
+                    <div>
+                      <p className="font-medium text-gray-800">
+                        Prescription v{rx.version}
+                      </p>
+
+                      <p className="text-xs text-gray-500">
+                        {new Date(rx.createdAt).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </p>
+                    </div>
+
+                    <div className="flex gap-2">
+                      {rx.url && (
+                        <>
+                          <a
+                            href={rx.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Button variant="outline" size="sm">
+                              View
+                            </Button>
+                          </a>
+
+                          <a href={rx.url} download>
+                            <Button size="sm">
+                              <Download className="w-4 h-4 mr-1" />
+                              Download
+                            </Button>
+                          </a>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
 
@@ -404,10 +553,14 @@ export default function AppointmentConfirmedPage() {
           <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
             <p className="text-xs text-gray-500 uppercase">Status</p>
             <div className="mt-2 flex items-center justify-between gap-3">
-              <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusClasses}`}>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-semibold ${statusClasses}`}
+              >
                 {String(appointment.status || "").toUpperCase()}
               </span>
-              <span className="text-xs text-gray-400">{new Date(appointment.createdAt).toLocaleDateString()}</span>
+              <span className="text-xs text-gray-400">
+                {new Date(appointment.createdAt).toLocaleDateString()}
+              </span>
             </div>
           </div>
 
@@ -420,9 +573,9 @@ export default function AppointmentConfirmedPage() {
                 </a>
               )}
 
-              <Button onClick={pickFile} className="w-full" variant="outline">Upload Document</Button>
-
-              
+              <Button onClick={pickFile} className="w-full" variant="outline">
+                Upload Document
+              </Button>
             </div>
           </div>
 
@@ -479,7 +632,6 @@ const renderStatusBanner = (status?: string) => {
   }
 };
 
-
 type DocItem = {
   _id: string;
   filename: string;
@@ -487,7 +639,6 @@ type DocItem = {
   s3Key?: string;
   url?: string; // signed url for download / preview
 };
-
 
 function AppointmentDocuments({
   appointmentId,
@@ -503,7 +654,8 @@ function AppointmentDocuments({
 
   // Helpers
   const isImage = (mime?: string, url?: string) =>
-    !!(mime && mime.startsWith("image/")) || !!(url && /\.(jpe?g|png|webp|gif|bmp)$/i.test(url || ""));
+    !!(mime && mime.startsWith("image/")) ||
+    !!(url && /\.(jpe?g|png|webp|gif|bmp)$/i.test(url || ""));
 
   const isPDF = (mime?: string, url?: string) =>
     !!(mime && mime.includes("pdf")) || !!(url && /\.pdf$/i.test(url || ""));
@@ -529,27 +681,31 @@ function AppointmentDocuments({
       const url = res?.url;
       if (!url) return;
       setDocuments((prev) =>
-        prev.map((d) => (d._id === docId ? { ...d, url } : d))
+        prev.map((d) => (d._id === docId ? { ...d, url } : d)),
       );
     } catch (err) {
       console.error("fetch signed url", err);
     }
   };
 
-
   return (
     <section aria-labelledby="docs-heading" className="mt-6">
-
       {/* Horizontal scrollable previews */}
       <div className="overflow-x-auto py-2">
         <div className="flex gap-4 w-max min-w-full px-1">
           {documents.length === 0 ? (
             <div className="min-w-[280px] flex items-center justify-center rounded-lg border border-dashed border-gray-200 bg-white/60 px-6 py-8">
-              <div className="text-sm text-gray-500">No documents uploaded yet</div>
+              <div className="text-sm text-gray-500">
+                No documents uploaded yet
+              </div>
             </div>
           ) : (
             documents.map((doc) => {
-              const url = doc.url || (doc.s3Key ? `${process.env.NEXT_PUBLIC_AWS_URL}/${doc.s3Key}` : undefined);
+              const url =
+                doc.url ||
+                (doc.s3Key
+                  ? `${process.env.NEXT_PUBLIC_AWS_URL}/${doc.s3Key}`
+                  : undefined);
               const imgPreview = isImage(doc.mimeType, url);
               const pdfPreview = isPDF(doc.mimeType, url);
 
@@ -560,11 +716,13 @@ function AppointmentDocuments({
                 >
                   <div className="flex items-start overflow-x-scroll justify-between gap-2">
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800 truncate">{doc.filename}</p>
-                      <p className="text-xs text-gray-500 mt-1">{doc.mimeType?.split('/')[1].toUpperCase() || "—"}</p>
+                      <p className="text-sm font-medium text-gray-800 truncate">
+                        {doc.filename}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {doc.mimeType?.split("/")[1].toUpperCase() || "—"}
+                      </p>
                     </div>
-
-                    
                   </div>
 
                   {/* Preview area */}
@@ -585,7 +743,12 @@ function AppointmentDocuments({
                     ) : pdfPreview ? (
                       url ? (
                         <div className="w-full h-40 rounded-md border overflow-hidden flex items-center justify-center bg-gray-50">
-                          <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600">
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600"
+                          >
                             Open PDF
                           </a>
                         </div>

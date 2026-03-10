@@ -11,6 +11,7 @@ import { useAuthStore } from "@/lib/auth";
 import { useGoogleLogin } from "@react-oauth/google";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
+import { Input } from "@/components/ui/input";
 
 const loadRazorpayScript = (): Promise<boolean> =>
   new Promise((resolve) => {
@@ -69,7 +70,7 @@ export default function BookAppointment() {
 
   const [loading, setLoading] = useState(false);
   const [slotsLoading, setSlotsLoading] = useState(false);
-  const [orderCreating, setOrderCreating] = useState(false);
+  // const [orderCreating, setOrderCreating] = useState(false);
 
   const [pricing, setPricing] = useState<any>(null);
   const [currency, setCurrency] = useState<string>("INR");
@@ -138,14 +139,15 @@ export default function BookAppointment() {
   };
 
   // get payment method
-  const getPaymentMethod = () => {
-    const city = selectedClinic.toUpperCase();
+  // const getPaymentMethod = () => {
+  //   const city = selectedClinic.toUpperCase();
 
-    if (city === "DEHRADUN") return "PAY_ON_ARRIVAL";
+  //   if (city === "DEHRADUN") return "PAY_ON_ARRIVAL";
 
-    return "ONLINE";
-  };
-  const paymentMethod = getPaymentMethod();
+  //   return "ONLINE";
+  // };
+
+  // const paymentMethod = getPaymentMethod();
 
   // clinic display data
   const clinicData: Record<string, any> = {
@@ -339,23 +341,24 @@ export default function BookAppointment() {
     if (!name || !email || !phone || !age || !gender) {
       return toast.error("Fill patient details");
     }
+
     if (!consentAccepted) {
-      return toast.error(
-        "Please accept the consultation consent before booking.",
-      );
+      return toast.error("Please accept the consultation consent");
     }
 
     if (phone.length !== 10) {
       return toast.error("Enter a valid 10-digit phone number");
     }
 
-    if (blockedInfo.blocked)
+    if (blockedInfo.blocked) {
       return toast.error(blockedInfo.message || "Selected date is blocked");
+    }
 
     setLoading(true);
 
     try {
-      // get-or-create patient
+      /* create patient */
+
       const patientResp = (await api.post("/patients", {
         name,
         phone,
@@ -367,127 +370,39 @@ export default function BookAppointment() {
       const patient = patientResp.patient;
       const patientId = patient._id || patient.id;
 
-      // -----------------------------
-      // NEW FLOW: PAY ON ARRIVAL
-      // -----------------------------
-      if (paymentMethod === "PAY_ON_ARRIVAL") {
-        const appointmentPayload = {
-          email,
-          patientId,
-          city: selectedClinic.toUpperCase(),
-          date: selectedDate,
-          startTime: selectedTime,
-          endTime: getEndTime(selectedTime),
+      /* create appointment */
 
-          payment: {
-            method: "PAY_ON_ARRIVAL",
-          },
-        };
-
-        const created = (await api.post(
-          "/appointments",
-          appointmentPayload,
-        )) as any;
-
-        toast.success("Appointment confirmed! Pay at clinic.");
-        router.push(`/appointment-confirmed/${created.appointment._id}`);
-        return;
-      }
-
-      // -----------------------------
-      // EXISTING FLOW: ONLINE PAYMENT
-      // -----------------------------
-      setOrderCreating(true);
-      const orderResp = await api.post("/payments/create-order", {
+      const appointmentPayload = {
+        email,
+        patientId,
         city: selectedClinic.toUpperCase(),
-      });
-      setOrderCreating(false);
+        date: selectedDate,
+        startTime: selectedTime,
+        endTime: getEndTime(selectedTime),
 
-      const {
-        order_id,
-        key_id,
-        amount,
-        currency: orderCurrency,
-      }: any = orderResp;
-
-      if (!order_id || !key_id)
-        throw new Error("Failed to create payment order");
-
-      const loaded = await loadRazorpayScript();
-      if (!loaded) throw new Error("Payment SDK failed to load");
-
-      const checkoutOptions: any = {
-        key: key_id,
-        amount,
-        currency: orderCurrency,
-        name: clinicData[selectedClinic.toUpperCase()]?.name || "Clinic",
-        description: "Consultation Fee",
-        order_id,
-        prefill: { name, email, contact: phone },
-        notes: {
-          clinic: selectedClinic.toUpperCase(),
-          date: selectedDate,
-          startTime: selectedTime,
-        },
-        handler: async (response: any) => {
-          try {
-            // verify
-            await api.post("/payments/verify", {
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
-            });
-
-            // create appointment
-            const appointmentPayload = {
-              email,
-              patientId,
-              city: selectedClinic.toUpperCase(),
-              date: selectedDate,
-              startTime: selectedTime,
-              endTime: getEndTime(selectedTime),
-              payment: {
-                method: "ONLINE",
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-                status: "PAID",
-              },
-            };
-
-            const created = (await api.post(
-              "/appointments",
-              appointmentPayload,
-            )) as any;
-
-            toast.success("Appointment confirmed!");
-            router.push(`/appointment-confirmed/${created.appointment._id}`);
-          } catch (err: any) {
-            console.error("after-payment error", err);
-            if (err?.response?.status === 409) {
-              toast.error("Slot was taken. Choose another slot.");
-            } else {
-              toast.error(err?.message || "Booking failed after payment");
-            }
-          } finally {
-            setLoading(false);
-          }
-        },
-        modal: {
-          ondismiss: () => {
-            setLoading(false);
-            toast("Payment cancelled");
-          },
+        payment: {
+          method: "PAY_ON_ARRIVAL",
         },
       };
 
-      const rzp = new (window as any).Razorpay(checkoutOptions);
-      rzp.open();
+      const created = (await api.post(
+        "/appointments",
+        appointmentPayload,
+      )) as any;
+
+      toast.success("Appointment confirmed! Please pay at clinic.");
+
+      router.push(`/appointment-confirmed/${created.appointment._id}`);
     } catch (err: any) {
-      console.error("booking flow error", err);
-      toast.error(err?.message || "Failed to book appointment");
+      console.error("booking error", err);
+
+      if (err?.response?.status === 409) {
+        toast.error("Slot was taken. Choose another slot.");
+      } else {
+        toast.error(err?.message || "Booking failed");
+      }
+    } finally {
       setLoading(false);
-      setOrderCreating(false);
     }
   };
 
@@ -548,7 +463,7 @@ export default function BookAppointment() {
                     Date
                   </h2>
 
-                  <input
+                  <Input
                     type="date"
                     value={selectedDate}
                     onChange={(e) => {
@@ -567,7 +482,7 @@ export default function BookAppointment() {
 
                       setBlockedInfo({ blocked: false });
                     }}
-                    className="w-full px-4 py-3 border rounded-lg"
+                    className="w-fit px-4 py-3 border rounded-lg"
                   />
 
                   {blockedInfo.blocked && (
@@ -859,6 +774,9 @@ ${
                         <p className="font-bold text-xl text-primary">
                           ₹{price.discounted}
                         </p>
+                        <p className="text-red-500 font-semibold">
+                        Pay at Clinic
+                      </p>
                       </>
                     ) : (
                       <p className="text-red-500 font-semibold">
@@ -915,7 +833,7 @@ ${
                 handleBooking && handleBooking(e);
               }}
             >
-              {loading || orderCreating ? "Processing…" : "Book"}
+              {loading ? "Processing…" : "Book"}
             </Button>
           </div>
         </div>
