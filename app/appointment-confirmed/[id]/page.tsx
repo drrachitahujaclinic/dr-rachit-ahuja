@@ -439,9 +439,11 @@ export default function AppointmentConfirmedPage() {
 
               <div>
                 <h3 className="text-xs text-gray-500 uppercase">Payment</h3>
-                <p className="text-lg font-medium text-gray-900 mt-1">
-                  ₹{(appointment.payment?.amount || 0) / 100}
-                </p>
+                {appointment.city === "DEHRADUN" && (
+                  <p className="text-lg font-medium text-gray-900 mt-1">
+                    ₹{(appointment.payment?.amount || 0) / 100}
+                  </p>
+                )}
                 <p className="text-sm text-gray-600 mt-1">
                   Status:{" "}
                   <span className="font-semibold text-green-600">
