@@ -439,7 +439,7 @@ export default function AppointmentConfirmedPage() {
 
               <div>
                 <h3 className="text-xs text-gray-500 uppercase">Payment</h3>
-                {appointment.city === "DEHRADUN" && (
+                {appointment.city !== "DEHRADUN" && (
                   <p className="text-lg font-medium text-gray-900 mt-1">
                     ₹{(appointment.payment?.amount || 0) / 100}
                   </p>
