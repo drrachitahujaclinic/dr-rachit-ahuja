@@ -283,9 +283,74 @@ export default function AppointmentConfirmedPage() {
       </header>
 
       {/* Content grid */}
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main content (left, spans 2 cols on desktop) */}
+
         <div className="lg:col-span-2 space-y-6">
+          {/* Payment QR */}
+          {appointment.city !== 'DEHRADUN' && <section className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-6 shadow-sm">
+            {/* Title */}
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-xl">💳</span>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Pay Consultation Fee via UPI
+              </h3>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              {/* QR */}
+              <div className="flex-shrink-0 bg-white p-4 rounded-xl border shadow-lg">
+                <img
+                  src={`${process.env.NEXT_PUBLIC_AWS_URL}/uploads/qr-code.jpeg`}
+                  alt="UPI Payment QR"
+                  className="w-48 h-48"
+                />
+
+                <p className="text-xs text-gray-500 text-center mt-2">
+                  Scan using any UPI app
+                </p>
+              </div>
+
+              {/* Instructions */}
+              <div className="flex-1 text-center sm:text-left">
+                <p className="text-sm text-gray-700">
+                  Please scan this QR code using any UPI app (PhonePe, GPay,
+                  Paytm) to complete your consultation payment.
+                </p>
+
+                <p className="text-sm text-gray-700 mt-2">
+                  After payment, please{" "}
+                  <strong>take a screenshot of the payment confirmation</strong>{" "}
+                  and keep it safe. You may be asked to show it at the clinic.
+                </p>
+
+                {/* Important notice */}
+                <div className="mt-4 bg-white border border-yellow-300 rounded-lg p-3 text-sm text-gray-700">
+                  ⚠️ <strong>Important:</strong> Keep the payment screenshot
+                  saved on your phone until your appointment is completed.
+                </div>
+
+                {/* Actions */}
+                <div className="mt-4 flex flex-wrap gap-3 justify-center sm:justify-start">
+                  <Button
+                    onClick={() =>
+                      window.open(
+                        `${process.env.NEXT_PUBLIC_AWS_URL}/uploads/qr-code.jpeg`,
+                        "_blank",
+                      )
+                    }
+                  >
+                    Download QR
+                  </Button>
+
+                  <span className="text-xs text-gray-500 flex items-center">
+                    Appointment ID: {appointment._id}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </section>}
           {/* Status banner */}
           <div aria-live="polite">{renderStatusBanner(appointment.status)}</div>
 
@@ -578,20 +643,6 @@ export default function AppointmentConfirmedPage() {
               <Button onClick={pickFile} className="w-full" variant="outline">
                 Upload Document
               </Button>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
-            <p className="text-xs text-gray-500 uppercase">Quick Info</p>
-            <div className="mt-2 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <BadgeCheck className="w-4 h-4 text-gray-400" />
-                <span>Slot: 30 minutes</span>
-              </div>
-              <div className="mt-2 flex items-center gap-2">
-                <IndianRupee className="w-4 h-4 text-gray-400" />
-                <span>Fee: ₹{(appointment.payment?.amount || 0) / 100}</span>
-              </div>
             </div>
           </div>
         </aside>

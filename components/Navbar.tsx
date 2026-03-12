@@ -143,17 +143,17 @@ const Navbar: React.FC = () => {
         <div className="mx-auto max-w-7xl px-4">
           <div className="flex flex-col gap-3">
             <Link
-              href="#services"
+              href="/#services"
               onClick={() => setOpen(false)}
               className="py-2"
             >
               Services
             </Link>
-            <Link href="#about" onClick={() => setOpen(false)} className="py-2">
+            <Link href="/#about" onClick={() => setOpen(false)} className="py-2">
               About
             </Link>
             <Link
-              href="#contact"
+              href="/#contact"
               onClick={() => setOpen(false)}
               className="py-2"
             >
