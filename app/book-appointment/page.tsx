@@ -620,10 +620,24 @@ ${
                       <input
                         value={phone}
                         onChange={(e) => {
-                          const digitsOnly = e.target.value.replace(/\D/g, "");
-                          setPhone(digitsOnly.slice(0, 10));
+                          let digits = e.target.value.replace(/\D/g, "");
+
+                          // Remove country code if present
+                          if (digits.startsWith("91") && digits.length > 10) {
+                            digits = digits.slice(2);
+                          }
+
+                          // Remove leading 0
+                          if (digits.startsWith("0")) {
+                            digits = digits.slice(1);
+                          }
+
+                          setPhone(digits.slice(0, 10));
                         }}
                         placeholder="Phone number"
+                        inputMode="numeric"
+                        autoComplete="tel"
+                        pattern="[0-9]*"
                         className="px-4 py-3 border rounded-lg"
                         required
                       />
@@ -775,8 +789,8 @@ ${
                           ₹{price.discounted}
                         </p>
                         <p className="text-red-500 font-semibold">
-                        Pay at Clinic
-                      </p>
+                          Pay at Clinic
+                        </p>
                       </>
                     ) : (
                       <p className="text-red-500 font-semibold">
@@ -785,13 +799,6 @@ ${
                     )}
                   </div>
                 </div>
-              </Card>
-
-              <Card className="p-4 shadow-sm rounded-2xl">
-                <p className="font-semibold text-sm">Need Assistance?</p>
-                <a href="tel:+919876543210" className="text-primary text-sm">
-                  +91 98765 43210
-                </a>
               </Card>
             </div>
           </aside>
