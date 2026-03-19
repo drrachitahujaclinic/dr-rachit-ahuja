@@ -246,11 +246,14 @@ export default function BookAppointment() {
 
         // 2) fetch slots for selected clinic (server will map correctly)
         // ensure clinic param is uppercase expected by server
-        const clinicParamToSend = (
-          selectedClinic ||
-          allowed[0] ||
-          "DEHRADUN"
-        ).toUpperCase();
+        const finalClinic = allowed
+          .map((a) => a.toLowerCase())
+          .includes(selectedClinic.toLowerCase())
+          ? selectedClinic
+          : (allowed[0] || "DEHRADUN").toLowerCase();
+
+        const clinicParamToSend = finalClinic.toUpperCase();
+
         const slotsRes = (await api.get(
           `/slots?date=${selectedDate}&clinic=${clinicParamToSend}`,
         )) as any;
@@ -308,26 +311,6 @@ export default function BookAppointment() {
     fetchSettingsAndSlots();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate, selectedClinic]);
-
-  // Whenever selectedClinic changes (after date selected), re-fetch slots
-  useEffect(() => {
-    const fetchSlotsForClinic = async () => {
-      if (!selectedDate) return;
-      setSlotsLoading(true);
-      try {
-        const clinicParamToSend = selectedClinic.toUpperCase();
-        const slotsRes = (await api.get(
-          `/slots?date=${selectedDate}&clinic=${clinicParamToSend}`,
-        )) as any;
-        if (slotsRes && slotsRes.slots) setSlots(slotsRes.slots || []);
-      } catch (err: any) {
-        console.error("fetchSlotsForClinic", err);
-      } finally {
-        setSlotsLoading(false);
-      }
-    };
-    fetchSlotsForClinic();
-  }, [selectedClinic]);
 
   const handleBooking = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -788,11 +771,15 @@ ${
                         <p className="font-bold text-xl text-primary">
                           ₹{price.discounted}
                         </p>
-                        {selectedClinic!=='online' ? <p className="text-red-500 font-semibold">
-                          Pay at Clinic
-                        </p>: <p className="text-red-500 font-semibold">
-                          Pay Online
-                        </p>}
+                        {selectedClinic !== "online" ? (
+                          <p className="text-red-500 font-semibold">
+                            Pay at Clinic
+                          </p>
+                        ) : (
+                          <p className="text-red-500 font-semibold">
+                            Pay Online
+                          </p>
+                        )}
                       </>
                     ) : (
                       <p className="text-red-500 font-semibold">
