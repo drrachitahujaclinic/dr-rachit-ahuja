@@ -19,20 +19,26 @@ const Navbar: React.FC = () => {
 
   // Google OAuth Login
   const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+  onSuccess: async (tokenResponse) => {
+    try {
       await loginWithGoogle(tokenResponse.access_token);
 
-      // After login, continue to the stored redirect page if exists
-      const path = useAuthStore.getState().redirectTo;
-      if (path) {
+      const { redirectTo, setRedirect } = useAuthStore.getState();
+
+      if (redirectTo) {
         setRedirect(null);
-        router.push(path);
+        router.push(redirectTo);
+      } else {
+        router.push("/"); // fallback
       }
-    },
-    onError: () => {
-      console.error("Google login failed");
-    },
-  });
+    } catch (err) {
+      console.error("Login failed:", err);
+    }
+  },
+  onError: () => {
+    console.error("Google login failed");
+  },
+});
 
   // Book consultation logic
   const handleBook = () => {
