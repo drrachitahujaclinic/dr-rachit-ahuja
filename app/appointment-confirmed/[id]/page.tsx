@@ -289,7 +289,7 @@ export default function AppointmentConfirmedPage() {
 
         <div className="lg:col-span-2 space-y-6">
           {/* Payment QR */}
-          {appointment.city !== 'DEHRADUN' && <section className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-6 shadow-sm">
+          {appointment.city === 'ONLINE' && <section className="bg-yellow-50 border-2 border-yellow-300 rounded-2xl p-6 shadow-sm">
             {/* Title */}
             <div className="flex items-center gap-2 mb-4">
               <span className="text-xl">💳</span>

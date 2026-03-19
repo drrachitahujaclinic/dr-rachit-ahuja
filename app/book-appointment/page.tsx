@@ -788,9 +788,11 @@ ${
                         <p className="font-bold text-xl text-primary">
                           ₹{price.discounted}
                         </p>
-                        <p className="text-red-500 font-semibold">
+                        {selectedClinic!=='online' ? <p className="text-red-500 font-semibold">
                           Pay at Clinic
-                        </p>
+                        </p>: <p className="text-red-500 font-semibold">
+                          Pay Online
+                        </p>}
                       </>
                     ) : (
                       <p className="text-red-500 font-semibold">
