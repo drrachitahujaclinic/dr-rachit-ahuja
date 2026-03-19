@@ -22,7 +22,7 @@ api.interceptors.response.use(
       if (!isHandling401) {
         isHandling401 = true;
 
-        const { logout } = useAuthStore();
+        const { logout } = useAuthStore.getState();
 
         // silently clear frontend auth state
         logout();
