@@ -697,6 +697,7 @@ ${
                 <Button
                   className="w-full bg-primary text-white hover:bg-primary/90 rounded-lg text-lg py-6 font-semibold"
                   disabled={
+                    loading ||
                     !selectedDate ||
                     !selectedClinic ||
                     !selectedTime ||
@@ -818,6 +819,7 @@ ${
               form=""
               className="w-full py-5 text-sm font-semibold bg-primary text-white rounded-lg"
               disabled={
+                loading ||
                 !selectedDate ||
                 !selectedClinic ||
                 !selectedTime ||
